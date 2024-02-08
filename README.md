@@ -130,4 +130,4 @@ Each unit of course represents a physical unit, in almost all cases their standa
 
 ## Issues and improvements
 
-Please feel free to create issues on the [github repo]() or contact me directly.
+Please feel free to create issues on the [github repo](https://github.com/SamuelNoesslboeck/syunit) or contact me directly.
