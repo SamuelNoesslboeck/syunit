@@ -1,11 +1,13 @@
 #![crate_name = "syunit"]
 #![doc = include_str!("../README.md")]
 #![no_std]
+#![deny(missing_docs)]
 
 // Units
 use core::ops::{Add, AddAssign, Div, Sub, SubAssign};
 use core::time::Duration;
 
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize}; 
 
 // Helper import for local macro definitions
@@ -13,11 +15,13 @@ use crate as syunit;
 
 /// General marker trait for all units
 pub trait Unit : Into<f32> { 
+    /// Creates a new value of this unit using a `f32` value
     fn new(v : f32) -> Self
     where 
         Self : Sized;
 }
 
+/// Helper macro that implements everything needed to do +,-,+=,-= operations with the unit itself
 #[macro_export]
 macro_rules! additive_unit {
     ( $unit:ident ) => {
@@ -55,6 +59,7 @@ macro_rules! additive_unit {
     };
 }
 
+/// Implements the basics for a unit
 #[macro_export]
 macro_rules! basic_unit {
     ( $a:ident ) => {      
@@ -96,6 +101,12 @@ macro_rules! basic_unit {
             #[inline(always)]
             pub fn powi(self, pow : i32) -> Self {
                 Self(self.0.powi(pow))
+            }
+
+            /// Returns the unit raised to the given power `pow`
+            #[inline(always)]
+            pub fn powf(self, pow : f32) -> Self {
+                Self(self.0.powf(pow))
             }
 
             /// Returns the sin of this units value
@@ -249,6 +260,7 @@ macro_rules! basic_unit {
     };
 }
 
+/// Implements everything required to form a "derive over time like"-connection between the given units
 #[macro_export]
 macro_rules! derive_units {
     ( $dist:ident, $vel:ident, $time:ident ) => {
@@ -302,7 +314,8 @@ macro_rules! derive_units {
 /// // Comparisions
 /// assert!(Time(1.0) > Time(-1.0));
 /// ```
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Time(pub f32);
 basic_unit!(Time);
 additive_unit!(Time);
@@ -345,7 +358,8 @@ impl Div<Time> for f32 {
 /// assert_eq!(Gamma(2.0) + Delta(1.0), Gamma(3.0));
 /// assert_eq!(Gamma(2.0) - Delta(1.0), Gamma(1.0));
 /// ```
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Gamma(pub f32);
 basic_unit!(Gamma);
 
@@ -431,7 +445,8 @@ pub fn force_gammas_from_phis<const N : usize>(phis : [Phi; N]) -> [Gamma; N] {
 /// # Unit
 /// 
 /// - Can be either radians or millimeters
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Phi(pub f32);
 basic_unit!(Phi);
 
@@ -503,7 +518,8 @@ impl SubAssign<Delta> for Phi {
 /// assert_eq!(Delta(5.0), Delta(2.5) * 2.0);
 /// assert_eq!(Delta(2.0), Gamma(4.0) - Gamma(2.0));
 /// ```
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Delta(pub f32);
 basic_unit!(Delta);
 additive_unit!(Delta);
@@ -521,7 +537,8 @@ impl Delta {
 /// # Unit
 /// 
 /// - Can be either radians per second or millimeters per second
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Velocity(pub f32);
 basic_unit!(Velocity);
 additive_unit!(Velocity);
@@ -547,7 +564,8 @@ impl Div<Velocity> for f32 {
 /// 
 /// assert_eq!(Velocity(5.0), Acceleration(2.5) * Time(2.0));
 /// assert_eq!(Acceleration(2.5), Velocity(5.0) / Time(2.0));
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Acceleration(pub f32); 
 basic_unit!(Acceleration);
 additive_unit!(Acceleration);
@@ -559,7 +577,8 @@ derive_units!(Force, Acceleration, Inertia);
 /// # Unit
 /// 
 /// - Can be either radians per second^3 or millimeters per second^3
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Jolt(pub f32); 
 basic_unit!(Jolt);
 additive_unit!(Jolt);
@@ -570,7 +589,8 @@ derive_units!(Acceleration, Jolt, Time);
 /// # Unit
 /// 
 /// - Can be either kilogramm or kilogramm times meter^2
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Inertia(pub f32);
 basic_unit!(Inertia);
 additive_unit!(Inertia);
@@ -580,7 +600,8 @@ additive_unit!(Inertia);
 /// # Unit
 /// 
 /// - Can be either Newton or Newtonmeter
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Force(pub f32);
 basic_unit!(Force);
 additive_unit!(Force);

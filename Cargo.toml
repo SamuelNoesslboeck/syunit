@@ -1,13 +1,17 @@
 [package]
 name = "syunit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = [ "Samuel Nösslböck <samuel.noesslboeck@gmail.com>" ]
-description = "A small library that contains some basic units to help structuring kinematics and robotic programming in rust."
+description = "A small library that contains some basic units to help structuring kinematics and robotic programming in rust"
 repository = "https://github.com/SamuelNoesslboeck/syunit"
 readme = "README.md"
 license-file = "LICENSE"
 keywords = [ "robotics", "kinematics", "unit-system", "math" ]
 
 [dependencies]
-serde = { version = "1.0.196", features = [ "derive" ] }
+serde = { version = "1.0.196", features = [ "derive" ], optional = true }
+
+[features]
+default = [ "serde" ]
+serde = [ "dep:serde" ]

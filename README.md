@@ -1,8 +1,8 @@
-# syunit
+## syunit
 
 A small library that contains some basic units to help structuring kinematics and robotic programming in rust. The library uses rusts *tuple structs* to create a zero-overhead and compile-time checking of correct unit, variable and function usage.
 
-## Quick introduction
+### Quick introduction
 
 In many functions for kinematics and robotics, it sometimes becomes unclear which type of unit is desired to be used, especially when it
 comes to distances. 
@@ -42,7 +42,7 @@ fn move_to_distance(dist : Gamma, speed : Velocity) {
 
 Each unit is represented by a 32bit float enclosed into a *tuple struct*. Why these units are helpful not only for documentation is explained in the flowing chapters:
 
-### Creation and conversion
+#### Creation and conversion
 
 As rust always prefers implicit syntax, so does this library. The unit types cannot be converted back to a `f32` without calling `into()`.
 
@@ -78,7 +78,7 @@ requires_velocity(gamma);
 // |
 ```
 
-### Naming
+#### Naming
 
 As the units are all named after their purpose, the context of functions, their parameters and other variables becomes clear easier. However the library does *not* differentiate between linear and rotary movement in terms of naming.
 
@@ -88,7 +88,7 @@ However there are three units for distances with different names:
 - `Phi`: Represents an absolute distance in the machines "perspective", often refered to as *mathematical angle/distance* in a lot of documentations. This angle is for example used to describe the rotation of a robot joint, where the `Gamma` angle has an offset compared to the `Phi` angle.
 - `Delta`: Represents a relative distance
 
-### Operations and automatic type evaluation
+#### Operations and automatic type evaluation
 
 Especially with distances, a lot of operations between them are restricted, as they would fail to make any sense. For example a `Gamma` distance cannot be added with either a `Phi` or another `Gamma` distance, as it does not make any sense to add two absolute distances. However a `Delta` distance can be added to a `Gamma` or `Phi` distance to extend/shorten said `Gamma` or `Phi` distance. 
 
@@ -124,10 +124,14 @@ assert_eq!(Velocity(3.0) / Time(2.0), Acceleration(1.5));
 assert_eq!(Velocity(3.0) * Time(3.0), Delta(9.0));
 ```
 
-### Physical background
+#### Physical background
 
 Each unit of course represents a physical unit, in almost all cases their standardized values. Only difference is distance, it is represented by *millimeters*. Meaning velocity becomes *millimeters per second*, acceleration becomes *millimeters per second squared* ...
 
-## Issues and improvements
+### `serde` implementation
+
+All the units implement `serde::Serialize` and `serde::Deserialize` if the "serde" feature is enabled, which is the case by default. 
+
+### Issues and improvements
 
 Please feel free to create issues on the [github repo](https://github.com/SamuelNoesslboeck/syunit) or contact me directly.
