@@ -144,6 +144,14 @@ impl core::ops::Mul<Factor> for Factor {
     }
 }
 
+impl core::ops::Mul<Factor> for Velocity {
+    type Output = Velocity;
+
+    fn mul(self, rhs: Factor) -> Self::Output {
+        Self::new(self.0 * rhs.0)
+    }
+}
+
 impl core::fmt::Display for Factor {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.0.fmt(f)

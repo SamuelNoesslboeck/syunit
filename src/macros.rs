@@ -145,6 +145,18 @@ macro_rules! basic_unit {
                     self
                 }
             }
+
+            // Other
+            /// Get the direction of the value (positive or negative)
+            /// 
+            /// `0.0` will be accounted as positive
+            pub fn get_direction(self) -> syunit::Direction {
+                if self.0 >= 0.0 {
+                    syunit::Direction::CW
+                } else {
+                    syunit::Direction::CCW
+                }
+            }
         }
 
         impl syunit::Unit for $a { 
