@@ -70,13 +70,88 @@ impl Div<Time> for f32 {
     }
 }
 
+/// Represents a certain factor between 0 and 1
+/// 
+/// # Unit
+/// 
+/// - Unitless
+/// 
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Factor(f32);
+
+impl Factor {
+    // Constants
+        /// Maximum
+        pub const MAX : Self = Self(1.0);
+
+        /// Half
+        pub const HALF : Self = Self(0.5);
+
+        /// Minium
+        pub const MIN : Self = Self(0.0);
+    // 
+
+    /// Creates a new `Factor`
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if the given 'val' is out of bounds (0 <= val <= 1)
+    pub fn new(val : f32) -> Self {
+        if (val >= 0.0) & (val <= 1.0) {
+            Self(val)
+        } else {
+            panic!("The given value is out of bounds for a Factor! ({})", val);
+        }
+    }
+
+    /// Tries to create a new factor, will be `None` if `val` is not between or equal to 0 and 1
+    pub fn try_new(val : f32) -> Option<Self> {
+        if (val >= 0.0) & (val <= 1.0) {
+            Some(Self(val))
+        } else {
+            None
+        }
+    }
+
+    /// Creates a new factor without checking bounds
+    /// 
+    /// # Unsafe
+    /// 
+    /// An out of bounds factor might throw up important logic
+    /// 
+    /// Should only be used for creating literals
+    pub const unsafe fn new_unchecked(val : f32) -> Self {
+        Self(val)
+    }
+
+    /// embedded_hal helper function
+    pub fn get_duty(self) -> u16 {
+        ((u16::MAX as f32) * self.0) as u16 
+    }
+
+    /// embedded_hal helper function
+    pub fn get_duty_for(self, max_duty : u16) -> u16 {
+        ((max_duty as f32) * self.0) as u16 
+    }
+}
+
+impl core::ops::Mul<Factor> for Factor {
+    type Output = Factor;
+
+    fn mul(self, rhs: Factor) -> Self::Output {
+        Self::new(self.0 * rhs.0)
+    }
+}
+
 /// The gamma distance represents the actual distance traveled by the component
 /// 
 /// # Unit
 /// 
 /// - Can be either radians or millimeters
 /// 
-//// # Operations
+/// # Operations
+/// 
 /// ```rust
 /// use syunit::{Gamma, Delta};
 /// 
@@ -278,6 +353,26 @@ impl Div<Velocity> for f32 {
 
     #[inline(always)]
     fn div(self, rhs: Velocity) -> Self::Output {
+        Time(self / rhs.0)
+    }
+}
+
+/// Represents a change in distance over time
+/// 
+/// # Unit
+/// 
+/// - Hertz (1 / seconds)
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Frequency(pub f32);
+basic_unit!(Frequency);
+additive_unit!(Frequency);
+
+impl Div<Frequency> for f32 {
+    type Output = Time;
+
+    #[inline(always)]
+    fn div(self, rhs: Frequency) -> Self::Output {
         Time(self / rhs.0)
     }
 }
