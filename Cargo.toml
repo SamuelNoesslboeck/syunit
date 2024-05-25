@@ -1,6 +1,6 @@
 [package]
 name = "syunit"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = [ "Samuel Nösslböck <samuel.noesslboeck@gmail.com>" ]
 description = "A small library that contains some basic units to help structuring kinematics and robotic programming in rust"
