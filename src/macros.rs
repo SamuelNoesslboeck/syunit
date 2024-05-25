@@ -165,36 +165,34 @@ macro_rules! basic_unit {
             }
         }
 
-        impl core::str::FromStr for $a {
-            type Err = <f32 as core::str::FromStr>::Err;
-        
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Ok(Self(s.parse::<f32>()?))
-            }
-        }
-
-        impl core::fmt::Display for $a {
-            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                self.0.fmt(f)
-            }
-        }
-
-        impl core::fmt::Debug for $a {
-            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                f.write_fmt(format_args!("{}({})", stringify!($a), self.0))
-            }
-        }
-
-        impl core::convert::Into<f32> for $a {
-            #[inline(always)]
-            fn into(self) -> f32 {
-                self.0
-            }
-        }
-
-        // Ref
+        // Display traits
+            impl core::str::FromStr for $a {
+                type Err = <f32 as core::str::FromStr>::Err;
             
-        // 
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    Ok(Self(s.parse::<f32>()?))
+                }
+            }
+
+            impl core::fmt::Display for $a {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    self.0.fmt(f)
+                }
+            }
+
+            impl core::fmt::Debug for $a {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    f.write_fmt(format_args!("{}({})", stringify!($a), self.0))
+                }
+            }
+
+            impl core::convert::Into<f32> for $a {
+                #[inline(always)]
+                fn into(self) -> f32 {
+                    self.0
+                }
+            }
+        //
 
         // Negation
             impl core::ops::Neg for $a {

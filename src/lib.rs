@@ -237,8 +237,8 @@ impl Sub<Delta> for Gamma {
     }
 }
 
-impl SubAssign for Gamma {
-    fn sub_assign(&mut self, rhs: Self) {
+impl SubAssign<Delta> for Gamma {
+    fn sub_assign(&mut self, rhs: Delta) {
         self.0 -= rhs.0;
     }
 }
@@ -347,14 +347,6 @@ impl SubAssign<Delta> for Phi {
 pub struct Delta(pub f32);
 basic_unit!(Delta);
 additive_unit!(Delta);
-
-impl Delta {
-    /// Creates a new delta distance from a starting point `start` and an endpoint `end`
-    #[inline(always)]
-    pub fn diff(start : Gamma, end : Gamma) -> Self {
-        end - start
-    }
-}
 
 /// Represents a change in distance over time
 /// 
