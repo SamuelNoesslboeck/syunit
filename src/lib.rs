@@ -160,7 +160,7 @@ impl core::fmt::Display for Factor {
 
 impl core::fmt::Debug for Factor {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_fmt(format_args!("{}({})", stringify!($a), self.0))
+        f.write_fmt(format_args!("Factor({})", self.0))
     }
 }
 
