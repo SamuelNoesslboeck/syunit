@@ -1,4 +1,8 @@
-## syunit
+<p align="center">
+    <img src="design/logo/syunit_logo_titled.svg" width="50%" />
+</p>
+
+-----------------------------
 
 A small library that contains some basic units to help structuring kinematics and robotic programming in rust. The library uses rusts *tuple structs* to create a zero-overhead and compile-time checking of correct unit, variable and function usage.
 
