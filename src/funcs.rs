@@ -4,15 +4,15 @@ use core::ops::{Add, Sub};
 /// 
 /// # Example
 /// 
-/// A simple example would be adding some delta distances to some gamma distances
+/// A simple example would be adding some relative distances to some component distances
 /// 
 /// ```rust
 /// use syunit::*;
 /// 
-/// let gammas = [ Gamma(2.0), Gamma(1.0), Gamma(-3.5) ];
-/// let deltas = [ Delta(1.2), Delta(3.5), Delta(0.5) ];
+/// let abs_pos_list = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
+/// let rel_dists = [ RelDist(1.2), RelDist(3.5), RelDist(0.5) ];
 /// 
-/// assert!(compare_unit_arrays(add_unit_arrays(gammas, deltas), [ Gamma(3.2), Gamma(4.5), Gamma(-3.0) ]));
+/// assert!(compare_unit_arrays(add_unit_arrays(abs_pos_list, rel_dists), [ AbsPos(3.2), AbsPos(4.5), AbsPos(-3.0) ]));
 /// ```
 pub fn add_unit_arrays<U, Rhs, const C : usize>(base : [U; C], rhs : [Rhs; C]) -> [U::Output; C]
 where
@@ -34,15 +34,15 @@ where
 /// 
 /// # Example
 /// 
-/// A simple example would be subtracting some delta distances to some gamma distances
+/// A simple example would be subtracting some relative distances to some components distances
 /// 
 /// ```rust
 /// use syunit::*;
 /// 
-/// let gammas = [ Gamma(2.2), Gamma(1.0), Gamma(-3.5) ];
-/// let deltas = [ Delta(1.2), Delta(3.5), Delta(0.5) ];
+/// let abs_pos_list = [ AbsPos(2.2), AbsPos(1.0), AbsPos(-3.5) ];
+/// let rel_dists = [ RelDist(1.2), RelDist(3.5), RelDist(0.5) ];
 /// 
-/// assert!(compare_unit_arrays(sub_unit_arrays(gammas, deltas), [ Gamma(1.0), Gamma(-2.5), Gamma(-4.0) ]));
+/// assert!(compare_unit_arrays(sub_unit_arrays(abs_pos_list, rel_dists), [ AbsPos(1.0), AbsPos(-2.5), AbsPos(-4.0) ]));
 /// ```
 pub fn sub_unit_arrays<U, Rhs, const C : usize>(base : [U; C], rhs : [Rhs; C]) -> [U::Output; C]
 where
@@ -67,12 +67,12 @@ where
 /// ```rust
 /// use syunit::*;
 /// 
-/// let gammas_ori = [ Gamma(2.0), Gamma(1.0), Gamma(-3.5) ];
-/// let gammas_same = [ Gamma(2.0), Gamma(1.0), Gamma(-3.5) ];
-/// let gammas_diff = [ Gamma(1.0), Gamma(2.0), Gamma(3.5) ];
+/// let comp_pos_ori = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
+/// let comp_pos_same = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
+/// let comp_pos_diff = [ AbsPos(1.0), AbsPos(2.0), AbsPos(3.5) ];
 /// 
-/// assert!(compare_unit_arrays(gammas_ori, gammas_same));
-/// assert!(!compare_unit_arrays(gammas_ori, gammas_diff)); 
+/// assert!(compare_unit_arrays(comp_pos_ori, comp_pos_same));
+/// assert!(!compare_unit_arrays(comp_pos_ori, comp_pos_diff)); 
 /// ```
 pub fn compare_unit_arrays<U, const C : usize>(base : [U; C], rhs : [U; C]) -> bool
 where

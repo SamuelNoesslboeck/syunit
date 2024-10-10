@@ -98,11 +98,8 @@ impl Factor {
     /// 
     /// Panics if the given 'val' is out of bounds (0 <= val <= 1)
     pub fn new(val : f32) -> Self {
-        if (val >= 0.0) & (val <= 1.0) {
-            Self(val)
-        } else {
-            panic!("The given value is out of bounds for a Factor! ({})", val);
-        }
+        Self::try_new(val)
+            .expect("Given value for factor is out of bounds!")
     }
 
     /// Tries to create a new factor, will be `None` if `val` is not between or equal to 0 and 1
@@ -172,7 +169,7 @@ impl core::fmt::Debug for Factor {
     }
 }
 
-/// The gamma distance represents the actual distance traveled by the component
+/// The `AbsPos` unit represents the absolute position of a component
 /// 
 /// # Unit
 /// 
@@ -181,163 +178,69 @@ impl core::fmt::Debug for Factor {
 /// # Operations
 /// 
 /// ```rust
-/// use syunit::{Gamma, Delta};
+/// use syunit::{AbsPos, RelDist};
 /// 
 /// // Subtract two absolute distances to get once relative
-/// assert_eq!(Gamma(2.0) - Gamma(1.0), Delta(1.0));
+/// assert_eq!(AbsPos(2.0) - AbsPos(1.0), RelDist(1.0));
 /// 
 /// // Add relative distance to an absolute one
-/// assert_eq!(Gamma(2.0) + Delta(1.0), Gamma(3.0));
-/// assert_eq!(Gamma(2.0) - Delta(1.0), Gamma(1.0));
+/// assert_eq!(AbsPos(2.0) + RelDist(1.0), AbsPos(3.0));
+/// assert_eq!(AbsPos(2.0) - RelDist(1.0), AbsPos(1.0));
 /// ```
 #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Gamma(pub f32);
-basic_unit!(Gamma);
+pub struct AbsPos(pub f32);
+basic_unit!(AbsPos);
 
-impl Gamma {
-    /// Does a force conversion of gamma-distance (absolute distance of component) to a phi-distance 
-    /// (absolute distance for mathematical calculations)
-    pub fn force_to_phi(self) -> Phi {
-        Phi(self.0)
-    }
-}
-
-impl Sub<Gamma> for Gamma {
-    type Output = Delta;
+impl Sub<AbsPos> for AbsPos {
+    type Output = RelDist;
     
     #[inline(always)]
-    fn sub(self, rhs: Gamma) -> Self::Output {
-        Delta(self.0 - rhs.0)
+    fn sub(self, rhs: AbsPos) -> Self::Output {
+        RelDist(self.0 - rhs.0)
     }
 }
 
-impl Add<Delta> for Gamma {
-    type Output = Gamma;
+impl Add<RelDist> for AbsPos {
+    type Output = AbsPos;
 
     #[inline(always)]
-    fn add(self, rhs: Delta) -> Self::Output {
+    fn add(self, rhs: RelDist) -> Self::Output {
         Self(self.0 + rhs.0)
     }
 }
 
-impl Add<Gamma> for Delta {
-    type Output = Delta;
+impl Add<AbsPos> for RelDist {
+    type Output = RelDist;
 
     #[inline(always)]
-    fn add(self, rhs: Gamma) -> Self::Output {
+    fn add(self, rhs: AbsPos) -> Self::Output {
         Self(self.0 + rhs.0)
     }
 }
 
-impl AddAssign<Delta> for Gamma {
-    fn add_assign(&mut self, rhs: Delta) {
+impl AddAssign<RelDist> for AbsPos {
+    fn add_assign(&mut self, rhs: RelDist) {
         self.0 += rhs.0;
     }
 }
 
-impl Sub<Delta> for Gamma {
-    type Output = Gamma;
+impl Sub<RelDist> for AbsPos {
+    type Output = AbsPos;
 
     #[inline]
-    fn sub(self, rhs: Delta) -> Self::Output {
+    fn sub(self, rhs: RelDist) -> Self::Output {
         Self(self.0 - rhs.0)
     }
 }
 
-impl SubAssign<Delta> for Gamma {
-    fn sub_assign(&mut self, rhs: Delta) {
+impl SubAssign<RelDist> for AbsPos {
+    fn sub_assign(&mut self, rhs: RelDist) {
         self.0 -= rhs.0;
     }
 }
 
-
-/// Helper functions to force convert an array of gammas to phis
-#[inline]
-pub fn force_phis_from_gammas<const N : usize>(gammas : [Gamma; N]) -> [Phi; N] {
-    let mut phis = [Phi::ZERO; N];
-    for i in 0 .. N {
-        phis[i] = gammas[i].force_to_phi();
-    }
-    phis
-}
-
-/// Helper functions to foce convert an array of phis to gammas
-#[inline]
-pub fn force_gammas_from_phis<const N : usize>(phis : [Phi; N]) -> [Gamma; N] {
-    let mut gammas = [Gamma::ZERO; N];
-    for i in 0 .. N {
-        gammas[i] = phis[i].force_to_gamma();
-    }
-    gammas
-}
-
-/// The phi distance represents the mathematical distance used for calculations
-/// 
-/// # Unit
-/// 
-/// - Can be either radians or millimeters
-#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Phi(pub f32);
-basic_unit!(Phi);
-
-impl Phi {
-    /// Does a force conversion of this phi-distance (absolute distance for mathematical calculations) to a gamma-distance 
-    /// (absolute distance for components)
-    pub fn force_to_gamma(self) -> Gamma {
-        Gamma(self.0)
-    }
-}
-
-impl Sub<Phi> for Phi {
-    type Output = Delta;
-
-    fn sub(self, rhs: Phi) -> Self::Output {
-        Delta(self.0 - rhs.0)
-    }
-}
-
-impl Add<Delta> for Phi {
-    type Output = Phi;
-
-    #[inline(always)]
-    fn add(self, rhs : Delta) -> Self::Output {
-        Phi(self.0 + rhs.0)
-    }
-}
-
-impl Add<Phi> for Delta {
-    type Output = Phi;
-
-    #[inline(always)]
-    fn add(self, rhs: Phi) -> Self::Output {
-        Phi(self.0 + rhs.0)
-    }
-}
-
-impl AddAssign<Delta> for Phi {
-    fn add_assign(&mut self, rhs: Delta) {
-        self.0 += rhs.0;
-    }
-}
-
-impl Sub<Delta> for Phi {
-    type Output = Phi;
-
-    #[inline(always)]
-    fn sub(self, rhs: Delta) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl SubAssign<Delta> for Phi {
-    fn sub_assign(&mut self, rhs: Delta) {
-        self.0 += rhs.0;
-    }
-}
-
-/// The delta distance represents a relative distance traveled by the 
+/// The rel_dist distance represents a relative distance traveled by the 
 /// 
 /// # Unit
 /// 
@@ -346,15 +249,15 @@ impl SubAssign<Delta> for Phi {
 /// ```rust
 /// use syunit::*;
 /// 
-/// assert_eq!(Delta(2.0), Delta(1.0) + Delta(1.0));
-/// assert_eq!(Delta(5.0), Delta(2.5) * 2.0);
-/// assert_eq!(Delta(2.0), Gamma(4.0) - Gamma(2.0));
+/// assert_eq!(RelDist(2.0), RelDist(1.0) + RelDist(1.0));
+/// assert_eq!(RelDist(5.0), RelDist(2.5) * 2.0);
+/// assert_eq!(RelDist(2.0), AbsPos(4.0) - AbsPos(2.0));
 /// ```
 #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Delta(pub f32);
-basic_unit!(Delta);
-additive_unit!(Delta);
+pub struct RelDist(pub f32);
+basic_unit!(RelDist);
+additive_unit!(RelDist);
 
 /// Represents a change in distance over time
 /// 
@@ -366,7 +269,7 @@ additive_unit!(Delta);
 pub struct Velocity(pub f32);
 basic_unit!(Velocity);
 additive_unit!(Velocity);
-derive_units!(Delta, Velocity, Time);
+derive_units!(RelDist, Velocity, Time);
 
 impl Div<Velocity> for f32 {
     type Output = Time;

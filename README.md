@@ -29,17 +29,17 @@ Even if most code is not as horribly documented and uses such terrible names, no
 use syunit::*;
 
 /// Relative movement
-fn move_distance(dist : Delta, speed : Velocity) {
+fn move_distance(dist : RelDist, speed : Velocity) {
     // ...
 }
 
 /// Absolute movement
-fn move_to_distance(dist : Gamma, speed : Velocity) {
+fn move_to_distance(dist : AbsPos, speed : Velocity) {
     // ...
 }
 
-// Delta => Relative distance
-// Gamma => Absolute distance
+// RelDist => Relative distance
+// AbsPos => Absolute distance
 //
 // Naming choice will be explained later
 ```
@@ -62,21 +62,21 @@ fn requires_velocity(value : Velocity) {
 }
 
 // Every unit is created by the tuple struct constructor using a `f32` value
-let gamma = Gamma(10.0);
+let abs_pos = AbsPos(10.0);
 
-requires_f32(gamma);
+requires_f32(abs_pos);
 // error[E0308]: mismatched types
-// | requires_f32(gamma) // ERROR! => Type `Gamma` cannot be used as `f32`
-// | ------------ ^^^^^ expected `f32`, found `Gamma`
+// | requires_f32(abs_pos) // ERROR! => Type `AbsPos` cannot be used as `f32`
+// | ------------ ^^^^^ expected `f32`, found `AbsPos`
 // | |
 // | arguments to this function are incorrect
 // |
 
-requires_velocity(gamma);
+requires_velocity(abs_pos);
 // error[E0308]: mismatched types
 // |
-// | requires_f32(gamma);
-// | ------------ ^^^^^ expected `Velocity`, found `Gamma`
+// | requires_f32(abs_pos);
+// | ------------ ^^^^^ expected `Velocity`, found `AbsPos`
 // | |
 // | arguments to this function are incorrect
 // |
@@ -86,33 +86,31 @@ requires_velocity(gamma);
 
 As the units are all named after their purpose, the context of functions, their parameters and other variables becomes clear easier. However the library does *not* differentiate between linear and rotary movement in terms of naming.
 
-However there are three units for distances with different names:
+However there are two units for distances with different names:
 
-- `Gamma`: Represents an absolute distance in the actuators "perspective", often refered to as *component angle/distance*
-- `Phi`: Represents an absolute distance in the machines "perspective", often refered to as *mathematical angle/distance* in a lot of documentations. This angle is for example used to describe the rotation of a robot joint, where the `Gamma` angle has an offset compared to the `Phi` angle.
-- `Delta`: Represents a relative distance
+- `AbsPos`: Represents an absolute distance *component angle/distance*
+- `RelDist`: Represents a relative distance
 
 #### Operations and automatic type evaluation
 
-Especially with distances, a lot of operations between them are restricted, as they would fail to make any sense. For example a `Gamma` distance cannot be added with either a `Phi` or another `Gamma` distance, as it does not make any sense to add two absolute distances. However a `Delta` distance can be added to a `Gamma` or `Phi` distance to extend/shorten said `Gamma` or `Phi` distance. 
+Especially with distances, a lot of operations between them are restricted, as they would fail to make any sense. For example an `AbsPos` distance cannot be added to another `AbsPos` distance, as it does not make any sense to add two absolute distances. However a `RelDist` distance can be added to an `AbsPos` to extend/shorten said distance. 
 
 ```rust
 use syunit::*;
 
-let gamma = Gamma(2.0);
-let phi = Phi(4.0);
-let delta = Delta(1.0);
+let abs_pos = AbsPos(2.0);
+let rel_dist = RelDist(1.0);
 
-assert_eq!(gamma + delta, Gamma(3.0));
-assert_eq!(phi + delta, Phi(5.0));
+assert_eq!(abs_pos + rel_dist, AbsPos(3.0));
+assert_eq!(abs_pos - rel_dist, AbsPos(1.0));
 ```
 
-Also it is for example possible to subtract two absolute distances, which gives the relative `Delta` distance between them.
+Also it is for example possible to subtract two absolute distances, which gives the relative `RelDist` distance between them.
 
 ```rust
 use syunit::*;
 
-assert_eq!(Gamma(5.0) - Gamma(3.0), Delta(2.0));
+assert_eq!(AbsPos(5.0) - AbsPos(3.0), RelDist(2.0));
 ```
 
 A very special unit is `Time`, dividing or multipling by it often changes units.
@@ -121,11 +119,11 @@ A very special unit is `Time`, dividing or multipling by it often changes units.
 use syunit::*;
 
 // Travelling a distance of 6mm in 2 seconds gives a velocity of 3mm/s
-assert_eq!(Delta(6.0) / Time(2.0), Velocity(3.0));
+assert_eq!(RelDist(6.0) / Time(2.0), Velocity(3.0));
 // Accelerating to a velocity of 3mm/s in 2 seconds gives an acceleration of 1.5mm/s^2
 assert_eq!(Velocity(3.0) / Time(2.0), Acceleration(1.5));
 // Travelling with 3mm/s for 3 seconds gives a total distance of 9mm
-assert_eq!(Velocity(3.0) * Time(3.0), Delta(9.0));
+assert_eq!(Velocity(3.0) * Time(3.0), RelDist(9.0));
 ```
 
 #### Physical background
