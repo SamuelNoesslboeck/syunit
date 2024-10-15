@@ -3,7 +3,7 @@
 #![no_std]
 #![deny(missing_docs)]
 
-// Units
+use core::f32::consts::PI;
 use core::ops::{Add, AddAssign, Div, Sub, SubAssign};
 use core::time::Duration;
 
@@ -270,6 +270,18 @@ pub struct Velocity(pub f32);
 basic_unit!(Velocity);
 additive_unit!(Velocity);
 derive_units!(RelDist, Velocity, Time);
+
+impl Velocity {
+    /// Create a new `Velocity` (in rad/s) from a given number of rounds per minute (`rpm`)
+    pub fn from_rpm(rpm : f32) -> Self {
+        Self(rpm / 60.0 * 2.0 * PI)
+    }
+
+    /// Get the number of rounds per minute this
+    pub fn into_rpm(self) -> f32 {
+        (self / 2.0 / PI * 60.0).0
+    }
+}
 
 impl Div<Velocity> for f32 {
     type Output = Time;
