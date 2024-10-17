@@ -1,119 +1,116 @@
-use core::ops::{Div, Mul};
-use core::str::FromStr;
+use super::*;
 
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize}; 
 
-/// 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SpeedFactor(f32);
+// #####################
+// #    SpeedFactor    #
+// #####################
+    /// Represents a certain factor between 0 and 1
+    /// 
+    /// # Unit
+    /// 
+    /// - Unitless
+    /// 
+    #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    pub struct Factor(f32);
 
-impl SpeedFactor {
-    /// Maximum speed
-    pub const MAX : Self = Self(1.0);
-    /// Half of the speed
-    pub const HALF : Self = Self(0.5);
-}
+    impl Factor {
+        // Constants
+            /// Maximum
+            pub const MAX : Self = Self(1.0);
 
-impl SpeedFactor {
-    /// Create a new speed factor 
-    pub const unsafe fn from_unchecked(value : f32) -> Self {
-        Self(value)
-    }
-}
+            /// Half
+            pub const HALF : Self = Self(0.5);
 
-impl TryFrom<f32> for SpeedFactor {
-    type Error = f32;
+            /// Minium
+            pub const MIN : Self = Self(0.0);
+        // 
 
-    fn try_from(value : f32) -> Result<Self, Self::Error> {
-        if (value <= 1.0) & (value > 0.0) {
-            Ok(Self(value))
-        } else {
-            Err(value)
+        /// Creates a new `Factor`
+        /// 
+        /// # Panics
+        /// 
+        /// Panics if the given 'val' is out of bounds (0 <= val <= 1)
+        pub fn new(val : f32) -> Self {
+            Self::try_new(val)
+                .expect("Given value for factor is out of bounds!")
         }
-    }
-}
 
-impl From<SpeedFactor> for f32 {
-    fn from(value: SpeedFactor) -> Self {
-        value.0
-    }
-}
+        /// Tries to create a new factor, will be `None` if `val` is not between or equal to 0 and 1
+        pub fn try_new(val : f32) -> Option<Self> {
+            if (val >= 0.0) & (val <= 1.0) {
+                Some(Self(val))
+            } else {
+                None
+            }
+        }
 
-/// Helper error for String-Parsing
-pub enum SpeedFactorFromStrError {
-    /// The string given is not convertable to a float
-    BadString(<f32 as FromStr>::Err),
-    /// The float is invalid for a `SpeedFactor`
-    BadValue(f32)
-}
+        /// Creates a new factor without checking bounds
+        /// 
+        /// # Unsafe
+        /// 
+        /// An out of bounds factor might throw up important logic
+        /// 
+        /// Should only be used for creating literals
+        pub const unsafe fn new_unchecked(val : f32) -> Self {
+            Self(val)
+        }
 
-impl FromStr for SpeedFactor {
-    type Err = SpeedFactorFromStrError;
+        /// embedded_hal helper function
+        pub fn get_duty(self) -> u16 {
+            ((u16::MAX as f32) * self.0) as u16 
+        }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        SpeedFactor::try_from(f32::from_str(s).map_err(
-            |err| SpeedFactorFromStrError::BadString(err), 
-        )?).map_err(
-            |err| SpeedFactorFromStrError::BadValue(err)
-        )
-    }
-}
+        /// embedded_hal helper function
+        pub fn get_duty_for(self, max_duty : u16) -> u16 {
+            ((max_duty as f32) * self.0) as u16 
+        }
 
-impl Default for SpeedFactor {
-    fn default() -> Self {
-        Self(1.0)
-    }
-}
-
-impl Mul<SpeedFactor> for SpeedFactor {
-    type Output = SpeedFactor;
-
-    fn mul(self, rhs: SpeedFactor) -> Self::Output {
-        SpeedFactor(self.0 * rhs.0)
-    }
-}
-
-// Multiplication
-    impl Mul<f32> for SpeedFactor {
-        type Output = SpeedFactor;
-
-        fn mul(self, rhs: f32) -> Self::Output {
-            SpeedFactor::try_from(self.0 * rhs)
-                .expect("Multiplication of speed-factor returned bad value")
+        /// Returns the [f32] value
+        pub const fn as_f32(self) -> f32 {
+            self.0
         }
     }
 
-    impl Mul<SpeedFactor> for f32 {
-        type Output = SpeedFactor;
+    impl core::ops::Mul<Factor> for Factor {
+        type Output = Factor;
 
-        fn mul(self, rhs: SpeedFactor) -> Self::Output {
-            SpeedFactor::try_from(self * rhs.0)
-                .expect("Multiplication of speed-factor returned bad value")
-        }
-    }
-// 
-
-// Division
-    impl Div<f32> for SpeedFactor {
-        type Output = SpeedFactor;
-
-        fn div(self, rhs: f32) -> Self::Output {
-            SpeedFactor::try_from(self.0 * rhs)
-                .expect("Multiplication of speed-factor returned bad value")
+        fn mul(self, rhs: Factor) -> Self::Output {
+            Self::new(self.0 * rhs.0)
         }
     }
 
-    impl Div<SpeedFactor> for f32 {
-        type Output = SpeedFactor;
+    impl core::ops::Mul<Factor> for Velocity {
+        type Output = Velocity;
 
-        fn div(self, rhs: SpeedFactor) -> Self::Output {
-            SpeedFactor::try_from(self * rhs.0)
-                .expect("Multiplication of speed-factor returned bad value")
+        fn mul(self, rhs: Factor) -> Self::Output {
+            Self::new(self.0 * rhs.0)
         }
     }
-// 
+
+    impl core::ops::Mul<Factor> for Time {
+        type Output = Time;
+
+        fn mul(self, rhs: Factor) -> Self::Output {
+            Self::new(self.0 * rhs.0)
+        }
+    }
+
+    impl core::fmt::Display for Factor {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            self.0.fmt(f)
+        }
+    }
+
+    impl core::fmt::Debug for Factor {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            f.write_fmt(format_args!("Factor({})", self.0))
+        }
+    }
+//
+
 
 /// Direction of movement
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Debug, Default)]
@@ -190,20 +187,22 @@ impl From<u8> for Direction {
     }
 }
 
-// impl Into<embedded_hal::Direction> for Direction {
-//     fn into(self) -> embedded_hal::Direction {
-//         match self {
-//             Self::CCW => embedded_hal::Direction::Downcounting,
-//             Self::CW => embedded_hal::Direction::Upcounting
-//         }
-//     }
-// }
+/// Represents a change in distance over time
+/// 
+/// # Unit
+/// 
+/// - Hertz (1 / seconds)
+#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Frequency(pub f32);
+basic_unit!(Frequency);
+additive_unit!(Frequency);
 
-// impl From<embedded_hal::Direction> for Direction {
-//     fn from(value: embedded_hal::Direction) -> Self {
-//         match value {
-//             embedded_hal::Direction::Downcounting => Self::CCW,
-//             embedded_hal::Direction::Upcounting => Self::CW
-//         }
-//     }
-// }
+impl Div<Frequency> for f32 {
+    type Output = Time;
+
+    #[inline(always)]
+    fn div(self, rhs: Frequency) -> Self::Output {
+        Time(self / rhs.0)
+    }
+}

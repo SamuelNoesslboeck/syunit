@@ -1,44 +1,6 @@
-/// Helper macro that implements everything needed to do +,-,+=,-= operations with the unit itself
-#[macro_export]
-macro_rules! additive_unit {
-    ( $unit:ident ) => {
-        impl core::ops::Add<$unit> for $unit {
-            type Output = $unit;
-        
-            #[inline(always)]
-            fn add(self, rhs: $unit) -> Self::Output {
-                $unit(self.0 + rhs.0)
-            }
-        }
-
-        impl core::ops::AddAssign<$unit> for $unit {
-            #[inline(always)]
-            fn add_assign(&mut self, rhs: $unit) {
-                self.0 += rhs.0;
-            }
-        }        
-        
-        impl core::ops::Sub<$unit> for $unit {
-            type Output = $unit;
-        
-            #[inline(always)]
-            fn sub(self, rhs: $unit) -> Self::Output {
-                $unit(self.0 - rhs.0) 
-            }
-        }
-
-        impl core::ops::SubAssign<$unit> for $unit {
-            #[inline]
-            fn sub_assign(&mut self, rhs : $unit) {
-                self.0 -= rhs.0
-            }
-        }
-    };
-}
-
 /// Implements the basics for a unit
 #[macro_export]
-macro_rules! basic_unit {
+macro_rules! basic_unit_helper {
     ( $a:ident ) => {      
         impl $a {
             /// Zero value of this unit (0.0)
@@ -174,15 +136,16 @@ macro_rules! basic_unit {
                 }
             }
 
-            impl core::fmt::Display for $a {
-                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                    self.0.fmt(f)
-                }
-            }
-
             impl core::fmt::Debug for $a {
                 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                     f.write_fmt(format_args!("{}({})", stringify!($a), self.0))
+                }
+            }
+
+            impl core::convert::From<f32> for $a {
+                #[inline(always)]
+                fn from(value : f32) -> Self {
+                    Self(value)
                 }
             }
 
@@ -247,6 +210,67 @@ macro_rules! basic_unit {
     };
 }
 
+/// Implements the basics for a unit
+#[macro_export]
+macro_rules! basic_unit {
+    ( $name:ident ) => {
+        syunit::basic_unit_helper!( $name );
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                self.0.fmt(f)
+            }
+        }
+    };
+    ( $name:ident, $sym:expr ) => {
+        syunit::basic_unit_helper!( $name );
+
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                f.write_fmt(format_args!("{}{}", self.0, stringify!($sym)))
+            }
+        }
+    }
+}
+
+/// Helper macro that implements everything needed to do +,-,+=,-= operations with the unit itself
+#[macro_export]
+macro_rules! additive_unit {
+    ( $unit:ident ) => {
+        impl core::ops::Add<$unit> for $unit {
+            type Output = $unit;
+        
+            #[inline(always)]
+            fn add(self, rhs: $unit) -> Self::Output {
+                $unit(self.0 + rhs.0)
+            }
+        }
+
+        impl core::ops::AddAssign<$unit> for $unit {
+            #[inline(always)]
+            fn add_assign(&mut self, rhs: $unit) {
+                self.0 += rhs.0;
+            }
+        }        
+        
+        impl core::ops::Sub<$unit> for $unit {
+            type Output = $unit;
+        
+            #[inline(always)]
+            fn sub(self, rhs: $unit) -> Self::Output {
+                $unit(self.0 - rhs.0) 
+            }
+        }
+
+        impl core::ops::SubAssign<$unit> for $unit {
+            #[inline]
+            fn sub_assign(&mut self, rhs : $unit) {
+                self.0 -= rhs.0
+            }
+        }
+    };
+}
+
 /// Implements everything required to form a "derive over time like"-connection between the given units
 #[macro_export]
 macro_rules! derive_units {
@@ -284,6 +308,34 @@ macro_rules! derive_units {
             #[inline(always)]
             fn div(self, rhs: $time) -> Self::Output {
                 $vel(self.0 / rhs.0)
+            }
+        }
+    };
+}
+
+/// Implements conversion between two units
+/// 
+/// ### Syntax
+/// 
+/// `( input, output, conv )`
+/// 
+/// - `input`: The input unit
+/// - `output`: The output unit
+/// - `conv`: The conversion factor, can be an expression (=> `output = input * conv`)
+#[macro_export]
+macro_rules! conversion_unit {
+    ( $input:ident, $output:ident, $conv:expr ) => {
+        impl From<$input> for $output {
+            #[inline(always)]
+            fn from(value : $input) -> Self {
+                Self(value.0 * ($conv))
+            }
+        }
+
+        impl From<$output> for $input {
+            #[inline(always)]
+            fn from(value : $output) -> Self {
+                Self(value.0 / ($conv))
             }
         }
     };
