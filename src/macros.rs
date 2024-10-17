@@ -222,7 +222,7 @@ macro_rules! basic_unit {
             }
         }
     };
-    ( $name:ident, $sym:expr ) => {
+    ( $name:ident, $sym:tt ) => {
         syunit::basic_unit_helper!( $name );
 
         impl core::fmt::Display for $name {

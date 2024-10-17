@@ -16,12 +16,16 @@ use serde::{Serialize, Deserialize};
     mod funcs;
     pub use funcs::*;
 
-    mod macros;
+    /// Macros for creating units
+    pub mod macros;
 
     mod specials;
     pub use specials::*;
 
     // Unit systems
+    /// Imperial units of measurement
+    pub mod imperial;
+
     /// Metric units of measurement 
     pub mod metric;
 // 
@@ -44,44 +48,72 @@ use crate as syunit;
 // #######################
 // #    General Units    #
 // #######################
-    /// Represents a time
-    /// 
-    /// # Unit
-    /// 
-    /// - In seconds
-    /// 
-    /// ```rust
-    /// use syunit::*;
-    /// 
-    /// // Comparisions
-    /// assert!(Time(1.0) > Time(-1.0));
-    /// ```
-    #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Time(pub f32);
-    basic_unit!(Time);
-    additive_unit!(Time);
-
-    impl Into<Duration> for Time {
-        #[inline(always)]
-        fn into(self) -> Duration {
-            // Negative time fallback
-            // if self.0.is_sign_negative() {
-            //     self.0 = self.0.abs();
-            // }
-
-            Duration::from_secs_f32(self.0)
+    // Time
+        /// Represents a time in seconds as a [f32]
+        /// 
+        /// ```rust
+        /// use core::time::Duration;
+        /// 
+        /// use syunit::*;
+        /// 
+        /// // Duration conversion
+        /// assert_eq!(Time(2.0), Duration::from_secs(2).into());
+        /// assert_eq!(Time(0.005), Duration::from_millis(5).into());
+        /// 
+        /// // Comparisions
+        /// assert!(Time(1.0) > Time(-1.0));
+        /// ```
+        #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        pub struct Time(pub f32);
+        basic_unit!(Time);
+        additive_unit!(Time);
+        
+        impl From<Time> for Duration {
+            #[inline(always)]
+            fn from(value : Time) -> Self {
+                Duration::from_secs_f32(value.0)
+            }
         }
-    }
 
-    impl Div<Time> for f32 {
-        type Output = Velocity;
-
-        #[inline(always)]
-        fn div(self, rhs: Time) -> Self::Output {
-            Velocity(self / rhs.0)
+        impl From<Duration> for Time {
+            #[inline(always)]
+            fn from(value : Duration) -> Self {
+                Self(value.as_secs_f32())
+            }
         }
-    }
+
+        impl Div<Time> for f32 {
+            type Output = Frequency;
+
+            #[inline(always)]
+            fn div(self, rhs: Time) -> Self::Output {
+                Frequency(self / rhs.0)
+            }
+        }
+    //
+
+    // Frequency
+        /// Represents a change in distance over time
+        /// 
+        /// # Unit
+        /// 
+        /// - Hertz (1 / seconds)
+        #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        pub struct Frequency(pub f32);
+        basic_unit!(Frequency);
+        additive_unit!(Frequency);
+
+        impl Div<Frequency> for f32 {
+            type Output = Time;
+
+            #[inline(always)]
+            fn div(self, rhs: Frequency) -> Self::Output {
+                Time(self / rhs.0)
+            }
+        }
+    // 
 
     /// The `AbsPos` unit represents the absolute position of a component
     /// 

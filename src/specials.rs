@@ -186,23 +186,3 @@ impl From<u8> for Direction {
         Self::from_u8(value)
     }
 }
-
-/// Represents a change in distance over time
-/// 
-/// # Unit
-/// 
-/// - Hertz (1 / seconds)
-#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Frequency(pub f32);
-basic_unit!(Frequency);
-additive_unit!(Frequency);
-
-impl Div<Frequency> for f32 {
-    type Output = Time;
-
-    #[inline(always)]
-    fn div(self, rhs: Frequency) -> Self::Output {
-        Time(self / rhs.0)
-    }
-}
