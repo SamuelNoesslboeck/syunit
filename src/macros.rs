@@ -2,116 +2,6 @@
 #[macro_export]
 macro_rules! basic_unit_helper {
     ( $a:ident ) => {      
-        impl $a {
-            /// Returns the absolute value of the unit 
-            #[inline(always)]
-            pub fn abs(self) -> Self {
-                Self(self.0.abs())
-            }
-
-            /// Returns `true` if this units value is neither NaN nor Infinite
-            #[inline(always)]
-            pub fn is_finite(self) -> bool {
-                self.0.is_finite()
-            }
-
-            /// Returns `true` if this units value is neither NaN, Infinite or zero
-            #[inline(always)]
-            pub fn is_normal(self) -> bool {
-                self.0.is_normal()
-            }
-
-            /// Returns `true` if this units value is Nan
-            #[inline(always)]
-            pub fn is_nan(self) -> bool {
-                self.0.is_nan()
-            }
-
-            /// Returns the unit raised to the given integer power `pow`
-            #[inline(always)]
-            pub fn powi(self, pow : i32) -> Self {
-                Self(self.0.powi(pow))
-            }
-
-            /// Returns the unit raised to the given power `pow`
-            #[inline(always)]
-            pub fn powf(self, pow : f32) -> Self {
-                Self(self.0.powf(pow))
-            }
-
-            /// Returns the sin of this units value
-            #[inline(always)]
-            pub fn sin(self) -> f32 {
-                self.0.sin()
-            }
-
-            /// Returns the cos of this units value
-            #[inline(always)]
-            pub fn cos(self) -> f32 {
-                self.0.tan()
-            }
-
-            /// Returns the tan of this units value
-            #[inline(always)]
-            pub fn tan(self) -> f32 {
-                self.0.tan()
-            }
-
-            /// Returns `true` if the sign bit of this value is negative (value smaller than 0.0, -0.0 included)
-            pub fn is_sign_negative(self) -> bool { 
-                self.0.is_sign_negative()
-            }
-
-            /// Returns `true` if the sign bit of this value is positive (value smaller than 0.0, -0.0 included)
-            pub fn is_sign_positive(self) -> bool {
-                self.0.is_sign_positive()
-            }
-
-            /// Returns the smaller value of this and another unit
-            #[inline(always)]
-            pub fn min(self, other : Self) -> Self {
-                Self(self.0.min(other.0))
-            }
-
-            /// Return the bigger value of this and another unit
-            #[inline(always)]
-            pub fn max(self, other : Self) -> Self {
-                Self(self.0.max(other.0))
-            }
-            
-            /// Return the bigger value of this and another unit, working with references
-            #[inline(always)]
-            pub fn max_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
-                if *self < *other {
-                    other
-                } else {
-                    self
-                }
-            }
-
-            /// Return the bigger value of this and another unit, working with references
-            #[inline(always)]
-            pub fn min_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
-                if *self > *other {
-                    other
-                } else {
-                    self
-                }
-            }
-
-            // Other
-            /// Get the direction of the value (positive or negative)
-            /// 
-            /// `0.0` will be accounted as positive
-            pub fn get_direction(self) -> syunit::Direction {
-                if self.0 >= 0.0 {
-                    syunit::Direction::CW
-                } else {
-                    syunit::Direction::CCW
-                }
-            }
-        }
-
         // Display traits
             impl core::str::FromStr for $a {
                 type Err = <f32 as core::str::FromStr>::Err;
@@ -202,11 +92,6 @@ macro_rules! basic_unit_helper {
             const NEG_INFINITY : Self = Self(f32::NEG_INFINITY);
             /// NaN value of this unit (f32::NAN)
             const NAN : Self = Self(f32::NAN);
-
-            #[inline(always)]
-            fn new(v : f32) -> Self {
-                Self(v)
-            }
         }
     };
 }

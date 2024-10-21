@@ -66,9 +66,14 @@ use serde::{Serialize, Deserialize};
             ((max_duty as f32) * self.0) as u16 
         }
 
-        /// Returns the [f32] value
         pub const fn as_f32(self) -> f32 {
             self.0
+        }
+    }
+
+    impl From<Factor> for f32 {
+        fn from(value: Factor) -> Self {
+            value.0
         }
     }
 

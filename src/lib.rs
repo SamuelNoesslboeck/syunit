@@ -29,7 +29,7 @@ use serde::{Serialize, Deserialize};
 
     /// Metric units of measurement 
     pub mod metric;
-    pub use metric::MetricMM;
+    pub use metric::{MetricMM, Rotary};
 // 
 
 // Helper import for local macro definitions
@@ -41,9 +41,9 @@ use crate as syunit;
     /// General marker trait for all units
     pub trait Unit : 
         From<f32> + Into<f32> +
-        Copy + Clone + Debug + Display +
+        Copy + Clone + Debug + Display + PartialEq + PartialOrd + Default + 
         FromStr + core::fmt::Debug + core::fmt::Display +
-        Mul<f32, Output = Self> + Div<f32, Output = Self> + Neg<Output = Self>
+        Mul<f32, Output = Self> + Div<f32, Output = Self> + Div<Self, Output = f32> + Neg<Output = Self>
     where  
         Self : Sized
     { 
@@ -56,10 +56,114 @@ use crate as syunit;
         /// NaN value of this unit (f32::NAN)
         const NAN : Self;
 
-        /// Creates a new value of this unit using a `f32` value
-        fn new(v : f32) -> Self
-        where 
-            Self : Sized;
+        /// Returns the absolute value of the unit 
+        #[inline(always)]
+        fn abs(self) -> Self {
+            Self::from(self.into().abs())
+        }
+
+        /// Returns `true` if this units value is neither NaN nor Infinite
+        #[inline(always)]
+        fn is_finite(self) -> bool {
+            self.into().is_finite()
+        }
+
+        /// Returns `true` if this units value is neither NaN, Infinite or zero
+        #[inline(always)]
+        fn is_normal(self) -> bool {
+            self.into().is_normal()
+        }
+
+        /// Returns `true` if this units value is Nan
+        #[inline(always)]
+        fn is_nan(self) -> bool {
+            self.into().is_nan()
+        }
+
+        /// Returns the unit raised to the given integer power `pow`
+        #[inline(always)]
+        fn powi(self, pow : i32) -> Self {
+            Self::from(self.into().powi(pow))
+        }
+
+        /// Returns the unit raised to the given power `pow`
+        #[inline(always)]
+        fn powf(self, pow : f32) -> Self {
+            Self::from(self.into().powf(pow))
+        }
+
+        /// Returns the sin of this units value
+        #[inline(always)]
+        fn sin(self) -> f32 {
+            self.into().sin()
+        }
+
+        /// Returns the cos of this units value
+        #[inline(always)]
+        fn cos(self) -> f32 {
+            self.into().tan()
+        }
+
+        /// Returns the tan of this units value
+        #[inline(always)]
+        fn tan(self) -> f32 {
+            self.into().tan()
+        }
+
+        /// Get the direction of the value (positive or negative)
+        /// 
+        /// `0.0` will be accounted as positive
+        fn get_direction(self) -> syunit::Direction {
+            if self >= Self::ZERO {
+                syunit::Direction::CW
+            } else {
+                syunit::Direction::CCW
+            }
+        }
+
+        /// Returns `true` if the sign bit of this value is negative (value smaller than 0.0, -0.0 included)
+        fn is_sign_negative(self) -> bool { 
+            self.into().is_sign_negative()
+        }
+
+        /// Returns `true` if the sign bit of this value is positive (value smaller than 0.0, -0.0 included)
+        fn is_sign_positive(self) -> bool {
+            self.into().is_sign_positive()
+        }
+
+        // Comparision
+            /// Return the bigger value of this and another unit
+            #[inline(always)]
+            fn max(self, other : Self) -> Self {
+                Self::from(self.into().max(other.into()))
+            }
+
+            /// Returns the smaller value of this and another unit
+            #[inline(always)]
+            fn min(self, other : Self) -> Self {
+                Self::from(self.into().min(other.into()))
+            }
+
+            /// Return the bigger value of this and another unit, working with references
+            #[inline(always)]
+            fn max_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
+                if *self < *other {
+                    other
+                } else {
+                    self
+                }
+            }
+
+            /// Return the bigger value of this and another unit, working with references
+            #[inline(always)]
+            fn min_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
+                if *self > *other {
+                    other
+                } else {
+                    self
+                }
+            }
+        //
     }
 
     pub trait AdditiveUnit : Unit +
@@ -72,13 +176,13 @@ use crate as syunit;
     pub trait IntegrableUnit<R : Unit, V : Unit> : Unit +
         Mul<V, Output = R> { }
 
-    pub trait UnitSet {
+    pub trait UnitSet : Copy + Clone + Debug + Default {
         type Time : Unit + AdditiveUnit;
 
         type Position : 
             Unit +
             AddAssign<Self::Distance> + SubAssign<Self::Distance> +
-            Add<Self::Distance, Output = Self::Position> + Sub<Self::Distance, Output = Self::Position>;
+            Add<Self::Distance, Output = Self::Position> + Sub<Self::Distance, Output = Self::Position> + Sub<Self::Position, Output = Self::Distance>;
 
         // Kinematics
             type Distance : 
@@ -110,6 +214,29 @@ use crate as syunit;
                 Unit + AdditiveUnit +
                 Mul<Self::Acceleration, Output = Self::Force>;
         // 
+    }
+
+    pub trait TransformableSet<O : UnitSet, R : From<f32> + Into<f32>> : UnitSet 
+    where
+        // Conversion operations required for input
+        Self::Position : Div<R, Output = O::Position>,
+        Self::Distance : Div<R, Output = O::Distance>,
+        Self::Velocity : Div<R, Output = O::Velocity>,
+        Self::Acceleration : Div<R, Output = O::Acceleration>,
+        Self::Jolt : Div<R, Output = O::Jolt>,
+        Self::Force : Mul<R, Output = O::Force>,
+        // Inertia currently not possible, as the ratio is doubled for the calculation of that, which messes up with units, maybe Area and volume are added in the future ...
+
+        // Conversion operations required for output
+        O::Position : Mul<R, Output = Self::Position>,
+        O::Distance : Mul<R, Output = Self::Distance>,
+        O::Velocity : Mul<R, Output = Self::Velocity>,
+        O::Acceleration : Mul<R, Output = Self::Acceleration>,
+        O::Jolt : Mul<R, Output = Self::Jolt>,
+        O::Force : Div<R, Output = Self::Force>,
+        // Inertia currently not possible, as the ratio is doubled for the calculation of that, which messes up with units, maybe Area and volume are added in the future ...
+    {
+
     }
 // 
 
@@ -152,11 +279,20 @@ use crate as syunit;
         }
 
         impl Div<Seconds> for f32 {
-            type Output = Frequency;
+            type Output = Hertz;
 
             #[inline(always)]
             fn div(self, rhs: Seconds) -> Self::Output {
-                Frequency(self / rhs.0)
+                Hertz(self / rhs.0)
+            }
+        }
+
+        impl Mul<Factor> for Seconds {
+            type Output = Seconds;
+
+            #[inline(always)]
+            fn mul(self, rhs: Factor) -> Self::Output {
+                Self(self.0 * rhs.as_f32())
             }
         }
     //
@@ -169,194 +305,55 @@ use crate as syunit;
         /// - Hertz (1 / seconds)
         #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-        pub struct Frequency(pub f32);
-        basic_unit!(Frequency);
-        additive_unit!(Frequency);
+        pub struct Hertz(pub f32);
+        basic_unit!(Hertz, "Hz");
+        additive_unit!(Hertz);
 
-        impl Div<Frequency> for f32 {
+        impl Div<Hertz> for f32 {
             type Output = Seconds;
 
             #[inline(always)]
-            fn div(self, rhs: Frequency) -> Self::Output {
+            fn div(self, rhs: Hertz) -> Self::Output {
                 Seconds(self / rhs.0)
             }
         }
     // 
 
-    /*
-    /// The `AbsPos` unit represents the absolute position of a component
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either radians or millimeters
-    /// 
-    /// # Operations
-    /// 
-    /// ```rust
-    /// use syunit::{AbsPos, RelDist};
-    /// 
-    /// // Subtract two absolute distances to get once relative
-    /// assert_eq!(AbsPos(2.0) - AbsPos(1.0), RelDist(1.0));
-    /// 
-    /// // Add relative distance to an absolute one
-    /// assert_eq!(AbsPos(2.0) + RelDist(1.0), AbsPos(3.0));
-    /// assert_eq!(AbsPos(2.0) - RelDist(1.0), AbsPos(1.0));
-    /// ```
+    /// Represents a position in radians
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct AbsPos(pub f32);
-    basic_unit!(AbsPos);
+    pub struct PositionRad(pub f32);
+    syunit::basic_unit!(PositionRad, "rad");
+    syunit::position_unit!(PositionRad, Radians);
 
-    impl Sub<AbsPos> for AbsPos {
-        type Output = RelDist;
-        
-        #[inline(always)]
-        fn sub(self, rhs: AbsPos) -> Self::Output {
-            RelDist(self.0 - rhs.0)
-        }
-    }
-
-    impl Add<RelDist> for AbsPos {
-        type Output = AbsPos;
-
-        #[inline(always)]
-        fn add(self, rhs: RelDist) -> Self::Output {
-            Self(self.0 + rhs.0)
-        }
-    }
-
-    impl Add<AbsPos> for RelDist {
-        type Output = RelDist;
-
-        #[inline(always)]
-        fn add(self, rhs: AbsPos) -> Self::Output {
-            Self(self.0 + rhs.0)
-        }
-    }
-
-    impl AddAssign<RelDist> for AbsPos {
-        fn add_assign(&mut self, rhs: RelDist) {
-            self.0 += rhs.0;
-        }
-    }
-
-    impl Sub<RelDist> for AbsPos {
-        type Output = AbsPos;
-
-        #[inline]
-        fn sub(self, rhs: RelDist) -> Self::Output {
-            Self(self.0 - rhs.0)
-        }
-    }
-
-    impl SubAssign<RelDist> for AbsPos {
-        fn sub_assign(&mut self, rhs: RelDist) {
-            self.0 -= rhs.0;
-        }
-    }
-
-    /// The rel_dist distance represents a relative distance traveled by the 
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either radians or millimeters
-    /// 
-    /// ```rust
-    /// use syunit::*;
-    /// 
-    /// assert_eq!(RelDist(2.0), RelDist(1.0) + RelDist(1.0));
-    /// assert_eq!(RelDist(5.0), RelDist(2.5) * 2.0);
-    /// assert_eq!(RelDist(2.0), AbsPos(4.0) - AbsPos(2.0));
-    /// ```
+    /// Represents Radians (rad)
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct RelDist(pub f32);
-    basic_unit!(RelDist);
-    additive_unit!(RelDist);
+    pub struct Radians(pub f32);
+    syunit::basic_unit!(Radians, "rad");
+    syunit::additive_unit!(Radians);
+    syunit::derive_units!(Radians, RadPerSecond, Seconds);
 
-    /// Represents a change in distance over time
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either radians per second or millimeters per second
+    /// Represents Radians per second (rad/s)
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Velocity(pub f32);
-    basic_unit!(Velocity);
-    additive_unit!(Velocity);
-    derive_units!(RelDist, Velocity, Time);
+    pub struct RadPerSecond(pub f32);
+    syunit::basic_unit!(RadPerSecond, "rad/s");
+    syunit::additive_unit!(RadPerSecond);
+    syunit::derive_units!(RadPerSecond, RadPerSecond2, Seconds);
 
-    impl Velocity {
-        /// Create a new `Velocity` (in rad/s) from a given number of rounds per minute (`rpm`)
-        pub fn from_rpm(rpm : f32) -> Self {
-            Self(rpm / 60.0 * 2.0 * PI)
-        }
-
-        /// Get the number of rounds per minute this
-        pub fn into_rpm(self) -> f32 {
-            (self / 2.0 / PI * 60.0).0
-        }
-    }
-
-    impl Div<Velocity> for f32 {
-        type Output = Time;
-
-        #[inline(always)]
-        fn div(self, rhs: Velocity) -> Self::Output {
-            Time(self / rhs.0)
-        }
-    }
-
-    /// Represents a change in velocity over time
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either radians per second^2 or millimeters per second^2
-    /// 
-    /// ```
-    /// use syunit::*;
-    /// 
-    /// assert_eq!(Velocity(5.0), Acceleration(2.5) * Time(2.0));
-    /// assert_eq!(Acceleration(2.5), Velocity(5.0) / Time(2.0));
+    /// Represents metric millimeters per second squared (mm/s^2)
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Acceleration(pub f32); 
-    basic_unit!(Acceleration);
-    additive_unit!(Acceleration);
-    derive_units!(Velocity, Acceleration, Time);
-    derive_units!(Force, Acceleration, Inertia);
+    pub struct RadPerSecond2(pub f32);
+    syunit::basic_unit!(RadPerSecond2, "rad/s^2");
+    syunit::additive_unit!(RadPerSecond2);
+    syunit::derive_units!(RadPerSecond2, RadPerSecond3, Seconds);
 
-    /// Represents a change in acceleration over time
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either radians per second^3 or millimeters per second^3
+    /// Represents metric meters
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Jolt(pub f32); 
-    basic_unit!(Jolt);
-    additive_unit!(Jolt);
-    derive_units!(Acceleration, Jolt, Time);
-
-    /// Represents an inertia, slowing down movement processes
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either kilogramm or kilogramm times meter^2
-    #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Inertia(pub f32);
-    basic_unit!(Inertia);
-    additive_unit!(Inertia);
-
-    /// Represents a force, slowing down movement processes, eventually even overloading the component
-    /// 
-    /// # Unit
-    /// 
-    /// - Can be either Newton or Newtonmeter
-    #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Force(pub f32);
-    basic_unit!(Force);
-    additive_unit!(Force);
-*/
+    pub struct RadPerSecond3(pub f32);
+    syunit::basic_unit!(RadPerSecond3, "rad/s^3");
+    syunit::additive_unit!(RadPerSecond3);
+//
