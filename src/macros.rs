@@ -3,15 +3,6 @@
 macro_rules! basic_unit_helper {
     ( $a:ident ) => {      
         impl $a {
-            /// Zero value of this unit (0.0)
-            pub const ZERO : Self = Self(0.0);
-            /// Positive Infinity value of this unit (f32::INFINITY)
-            pub const INFINITY : Self = Self(f32::INFINITY);
-            /// Negative Infinity value of this unit (f32::INFINITY)
-            pub const NEG_INFINITY : Self = Self(f32::NEG_INFINITY);
-            /// NaN value of this unit (f32::NAN)
-            pub const NAN : Self = Self(f32::NAN);
-
             /// Returns the absolute value of the unit 
             #[inline(always)]
             pub fn abs(self) -> Self {
@@ -121,12 +112,6 @@ macro_rules! basic_unit_helper {
             }
         }
 
-        impl syunit::Unit for $a { 
-            fn new(v : f32) -> Self {
-                Self(v)
-            }
-        }
-
         // Display traits
             impl core::str::FromStr for $a {
                 type Err = <f32 as core::str::FromStr>::Err;
@@ -207,6 +192,22 @@ macro_rules! basic_unit_helper {
                 }
             }
         // 
+
+        impl syunit::Unit for $a { 
+            /// Zero value of this unit (0.0)
+            const ZERO : Self = Self(0.0);
+            /// Positive Infinity value of this unit (f32::INFINITY)
+            const INFINITY : Self = Self(f32::INFINITY);
+            /// Negative Infinity value of this unit (f32::INFINITY)
+            const NEG_INFINITY : Self = Self(f32::NEG_INFINITY);
+            /// NaN value of this unit (f32::NAN)
+            const NAN : Self = Self(f32::NAN);
+
+            #[inline(always)]
+            fn new(v : f32) -> Self {
+                Self(v)
+            }
+        }
     };
 }
 
@@ -218,16 +219,16 @@ macro_rules! basic_unit {
 
         impl core::fmt::Display for $name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                self.0.fmt(f)
+                <f32 as core::fmt::Display>::fmt(&self.0, f)
             }
         }
     };
-    ( $name:ident, $sym:tt ) => {
+    ( $name:ident, $sym:literal ) => {
         syunit::basic_unit_helper!( $name );
 
         impl core::fmt::Display for $name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                f.write_fmt(format_args!("{}{}", self.0, stringify!($sym)))
+                f.write_fmt(format_args!("{}{}", self.0, $sym))
             }
         }
     }
@@ -266,6 +267,49 @@ macro_rules! additive_unit {
             #[inline]
             fn sub_assign(&mut self, rhs : $unit) {
                 self.0 -= rhs.0
+            }
+        }
+
+        impl syunit::AdditiveUnit for $unit { }
+    };
+}
+
+#[macro_export]
+macro_rules! position_unit {
+    ( $pos:ident, $unit:ident ) => {
+        impl core::ops::Add<$unit> for $pos {
+            type Output = $pos;
+
+            fn add(self, rhs: $unit) -> Self::Output {
+                Self(self.0 + rhs.0)
+            }
+        }
+
+        impl core::ops::AddAssign<$unit> for $pos {
+            fn add_assign(&mut self, other : $unit) {
+                self.0.add_assign(other.0);
+            }
+        }
+
+        impl core::ops::Sub<$unit> for $pos {
+            type Output = $pos;
+
+            fn sub(self, rhs: $unit) -> Self::Output {
+                Self(self.0 + rhs.0)
+            }
+        }
+
+        impl core::ops::SubAssign<$unit> for $pos {
+            fn sub_assign(&mut self, other : $unit) {
+                self.0.sub_assign(other.0);
+            }
+        }
+
+        impl core::ops::Sub<$pos> for $pos {
+            type Output = $unit; 
+
+            fn sub(self, rhs: $pos) -> Self::Output {
+                $unit(self.0 - rhs.0)
             }
         }
     };
@@ -310,6 +354,10 @@ macro_rules! derive_units {
                 $vel(self.0 / rhs.0)
             }
         }
+
+        impl syunit::DerivableUnit<$vel, $time> for $dist { }
+
+        impl syunit::IntegrableUnit<$dist, $time> for $vel { }
     };
 }
 

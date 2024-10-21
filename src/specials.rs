@@ -1,5 +1,3 @@
-use super::*;
-
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize}; 
 
@@ -76,22 +74,6 @@ use serde::{Serialize, Deserialize};
 
     impl core::ops::Mul<Factor> for Factor {
         type Output = Factor;
-
-        fn mul(self, rhs: Factor) -> Self::Output {
-            Self::new(self.0 * rhs.0)
-        }
-    }
-
-    impl core::ops::Mul<Factor> for Velocity {
-        type Output = Velocity;
-
-        fn mul(self, rhs: Factor) -> Self::Output {
-            Self::new(self.0 * rhs.0)
-        }
-    }
-
-    impl core::ops::Mul<Factor> for Time {
-        type Output = Time;
 
         fn mul(self, rhs: Factor) -> Self::Output {
             Self::new(self.0 * rhs.0)

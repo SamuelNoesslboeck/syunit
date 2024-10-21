@@ -1,10 +1,11 @@
 #![crate_name = "syunit"]
 #![doc = include_str!("../README.md")]
 #![no_std]
-#![deny(missing_docs)]
+// #![deny(missing_docs)]
 
-use core::f32::consts::PI;
-use core::ops::{Add, AddAssign, Div, Sub, SubAssign};
+use core::fmt::{Debug, Display};
+use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
+use core::str::FromStr;
 use core::time::Duration;
 
 #[cfg(feature = "serde")]
@@ -28,6 +29,7 @@ use serde::{Serialize, Deserialize};
 
     /// Metric units of measurement 
     pub mod metric;
+    pub use metric::MetricMM;
 // 
 
 // Helper import for local macro definitions
@@ -37,11 +39,77 @@ use crate as syunit;
 // #    General traits    #
 // ########################
     /// General marker trait for all units
-    pub trait Unit : From<f32> + Into<f32> { 
+    pub trait Unit : 
+        From<f32> + Into<f32> +
+        Copy + Clone + Debug + Display +
+        FromStr + core::fmt::Debug + core::fmt::Display +
+        Mul<f32, Output = Self> + Div<f32, Output = Self> + Neg<Output = Self>
+    where  
+        Self : Sized
+    { 
+        /// Zero value of this unit (0.0)
+        const ZERO : Self;
+        /// Positive Infinity value of this unit (f32::INFINITY)
+        const INFINITY : Self;
+        /// Negative Infinity value of this unit (f32::INFINITY)
+        const NEG_INFINITY : Self;
+        /// NaN value of this unit (f32::NAN)
+        const NAN : Self;
+
         /// Creates a new value of this unit using a `f32` value
         fn new(v : f32) -> Self
         where 
             Self : Sized;
+    }
+
+    pub trait AdditiveUnit : Unit +
+        Add<Self, Output = Self> + Sub<Self, Output = Self> +
+        AddAssign<Self> + SubAssign<Self> { }
+
+    pub trait DerivableUnit<R : Unit, V : Unit> : Unit +
+        Div<V, Output = R> + Div<R, Output = V> { }
+
+    pub trait IntegrableUnit<R : Unit, V : Unit> : Unit +
+        Mul<V, Output = R> { }
+
+    pub trait UnitSet {
+        type Time : Unit + AdditiveUnit;
+
+        type Position : 
+            Unit +
+            AddAssign<Self::Distance> + SubAssign<Self::Distance> +
+            Add<Self::Distance, Output = Self::Position> + Sub<Self::Distance, Output = Self::Position>;
+
+        // Kinematics
+            type Distance : 
+                Unit + AdditiveUnit +
+                DerivableUnit<Self::Velocity, Self::Time>;
+
+            type Velocity : 
+                Unit + AdditiveUnit +
+                DerivableUnit<Self::Acceleration, Self::Time> +
+                IntegrableUnit<Self::Distance, Self::Time>;
+
+            type Acceleration :
+                Unit + AdditiveUnit +
+                DerivableUnit<Self::Jolt, Self::Time> +
+                IntegrableUnit<Self::Velocity, Self::Time>;
+
+            type Jolt :
+                Unit + AdditiveUnit +
+                IntegrableUnit<Self::Acceleration, Self::Time>;
+        // 
+
+        // Dynamics
+            type Force : 
+                Unit + AdditiveUnit +
+                Div<Self::Inertia, Output = Self::Acceleration> +
+                Div<Self::Acceleration, Output = Self::Inertia>;
+
+            type Inertia :
+                Unit + AdditiveUnit +
+                Mul<Self::Acceleration, Output = Self::Force>;
+        // 
     }
 // 
 
@@ -65,29 +133,29 @@ use crate as syunit;
         /// ```
         #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-        pub struct Time(pub f32);
-        basic_unit!(Time);
-        additive_unit!(Time);
+        pub struct Seconds(pub f32);
+        basic_unit!(Seconds);
+        additive_unit!(Seconds);
         
-        impl From<Time> for Duration {
+        impl From<Seconds> for Duration {
             #[inline(always)]
-            fn from(value : Time) -> Self {
+            fn from(value : Seconds) -> Self {
                 Duration::from_secs_f32(value.0)
             }
         }
 
-        impl From<Duration> for Time {
+        impl From<Duration> for Seconds {
             #[inline(always)]
             fn from(value : Duration) -> Self {
                 Self(value.as_secs_f32())
             }
         }
 
-        impl Div<Time> for f32 {
+        impl Div<Seconds> for f32 {
             type Output = Frequency;
 
             #[inline(always)]
-            fn div(self, rhs: Time) -> Self::Output {
+            fn div(self, rhs: Seconds) -> Self::Output {
                 Frequency(self / rhs.0)
             }
         }
@@ -106,15 +174,16 @@ use crate as syunit;
         additive_unit!(Frequency);
 
         impl Div<Frequency> for f32 {
-            type Output = Time;
+            type Output = Seconds;
 
             #[inline(always)]
             fn div(self, rhs: Frequency) -> Self::Output {
-                Time(self / rhs.0)
+                Seconds(self / rhs.0)
             }
         }
     // 
 
+    /*
     /// The `AbsPos` unit represents the absolute position of a component
     /// 
     /// # Unit
@@ -290,3 +359,4 @@ use crate as syunit;
     pub struct Force(pub f32);
     basic_unit!(Force);
     additive_unit!(Force);
+*/
