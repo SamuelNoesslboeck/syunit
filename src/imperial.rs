@@ -9,7 +9,7 @@ use crate as syunit;
     /// Represents metric meters
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct Inch(pub f32);
-    syunit::basic_unit!(Inch, "in");
-    syunit::conversion_unit!(Inch, Millimeters, 25.4); 
+    pub struct Inches(pub f32);
+    syunit::basic_unit!(Inches, "in");
+    syunit::impl_conversion!(Inches, Millimeters, 25.4); 
 // 
