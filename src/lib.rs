@@ -15,12 +15,14 @@ use serde::{Serialize, Deserialize};
 // ####################
 // #    Submodules    #
 // ####################
+    /// Functions for handling units
     mod funcs;
     pub use funcs::*;
 
-    /// Macros for creating units
+    /// Macros for creating units and fast implementations between them
     pub mod macros;
 
+    // Special units
     mod specials;
     pub use specials::*;
 
@@ -28,11 +30,13 @@ use serde::{Serialize, Deserialize};
     /// Imperial units of measurement
     pub mod imperial;
 
-    /// Metric units of measurement 
+    /// Metric units of measurement and useful [UnitSets](UnitSet)
     pub mod metric;
     pub use metric::{MetricMM, Rotary};
 
-    /// Fast imports
+    /// Lazy import of the library
+    /// 
+    /// Imports both the root and [metric] module
     pub mod prelude {
         pub use crate::*;
         pub use crate::metric::*;
@@ -62,7 +66,14 @@ use crate as syunit;
         const INFINITY : Self;
         /// Negative Infinity value of this unit (f32::INFINITY)
         const NEG_INFINITY : Self;
+
         /// NaN value of this unit (f32::NAN)
+        /// 
+        /// ```rust
+        /// use syunit::prelude::*;
+        /// 
+        /// assert_eq!(Radians::NAN, Radians::ZERO / Radians::ZERO);
+        /// ```
         const NAN : Self;
 
         /// Returns the absolute value of the unit 
@@ -71,19 +82,19 @@ use crate as syunit;
             Self::from(self.into().abs())
         }
 
-        /// Returns `true` if this units value is neither NaN nor Infinite
+        /// Returns `true` if this units value is neither [NaN](Unit::NAN) nor [Infinite](Unit::INFINITY)
         #[inline(always)]
         fn is_finite(self) -> bool {
             self.into().is_finite()
         }
 
-        /// Returns `true` if this units value is neither NaN, Infinite or zero
+        /// Returns `true` if this units value is neither [NaN](Unit::NAN), [Infinite](Unit::INFINITY) or zero
         #[inline(always)]
         fn is_normal(self) -> bool {
             self.into().is_normal()
         }
 
-        /// Returns `true` if this units value is Nan
+        /// Returns `true` if this units value is [NaN](Unit::NAN)
         #[inline(always)]
         fn is_nan(self) -> bool {
             self.into().is_nan()
@@ -130,30 +141,30 @@ use crate as syunit;
             }
         }
 
-        /// Returns `true` if the sign bit of this value is negative (value smaller than 0.0, -0.0 included)
+        /// Returns `true` if the sign bit of this value is negative (value smaller than `0.0`, `-0.0` included)
         fn is_sign_negative(self) -> bool { 
             self.into().is_sign_negative()
         }
 
-        /// Returns `true` if the sign bit of this value is positive (value smaller than 0.0, -0.0 included)
+        /// Returns `true` if the sign bit of this value is positive (value smaller than `0.0`, `-0.0` included)
         fn is_sign_positive(self) -> bool {
             self.into().is_sign_positive()
         }
 
         // Comparision
-            /// Return the bigger value of this and another unit
+            /// Compare this unit with another instance and return the bigger one
             #[inline(always)]
             fn max(self, other : Self) -> Self {
                 Self::from(self.into().max(other.into()))
             }
 
-            /// Returns the smaller value of this and another unit
+            /// Compare this unit with another instance and return the smaller one
             #[inline(always)]
             fn min(self, other : Self) -> Self {
                 Self::from(self.into().min(other.into()))
             }
 
-            /// Return the bigger value of this and another unit, working with references
+            /// Like [Unit::max], but with references
             #[inline(always)]
             fn max_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
                 if *self < *other {
@@ -163,7 +174,7 @@ use crate as syunit;
                 }
             }
 
-            /// Return the bigger value of this and another unit, working with references
+            /// Like [Unit::min], but with references
             #[inline(always)]
             fn min_ref<'a>(&'a self, other : &'a Self) -> &'a Self {
                 if *self > *other {
@@ -344,11 +355,7 @@ use crate as syunit;
     //
 
     // Frequency
-        /// Represents a change in distance over time
-        /// 
-        /// # Unit
-        /// 
-        /// - Hertz (1 / seconds)
+        /// Represents a freqency in Hertz (or 1 / Seconds)
         #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
         pub struct Hertz(pub f32);
@@ -365,7 +372,7 @@ use crate as syunit;
         }
     // 
 
-    /// Represents a position in radians
+    /// Represents a position in Radians
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct PositionRad(pub f32);
@@ -388,7 +395,7 @@ use crate as syunit;
     syunit::additive_unit!(RadPerSecond);
     syunit::derive_units!(RadPerSecond, RadPerSecond2, Seconds);
 
-    /// Represents metric millimeters per second squared (mm/s^2)
+    /// Represents metric Radians per second (rad/s^2)
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct RadPerSecond2(pub f32);
