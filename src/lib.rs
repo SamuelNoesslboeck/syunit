@@ -72,7 +72,8 @@ use crate as syunit;
         /// ```rust
         /// use syunit::prelude::*;
         /// 
-        /// assert_eq!(Radians::NAN, Radians::ZERO / Radians::ZERO);
+        /// assert!((Radians::ZERO / 0.0).is_nan());                // Result is Radians::NAN 
+        /// assert!((Radians::ZERO / Radians::ZERO).is_nan());      // Result is f32::NAN
         /// ```
         const NAN : Self;
 
@@ -321,6 +322,12 @@ use crate as syunit;
         /// assert_eq!(Seconds(2.0), Duration::from_secs(2).into());
         /// assert_eq!(Seconds(0.005), Duration::from_millis(5).into());
         /// 
+        /// // Basic maths
+        /// assert_eq!(Seconds(3.0) + Seconds(2.0), Seconds(5.0));
+        /// assert_eq!(Seconds(3.0) - Seconds(2.0), Seconds(1.0)); 
+        /// assert_eq!(Seconds(3.0) * 2.0, Seconds(6.0));
+        /// assert_eq!(Seconds(3.0) / -2.0, Seconds(-1.5));
+        /// 
         /// // Comparisions
         /// assert!(Seconds(1.0) > Seconds(-1.0));
         /// ```
@@ -343,24 +350,47 @@ use crate as syunit;
                 Self(value.as_secs_f32())
             }
         }
-
-        impl Div<Seconds> for f32 {
-            type Output = Hertz;
-
-            #[inline(always)]
-            fn div(self, rhs: Seconds) -> Self::Output {
-                Hertz(self / rhs.0)
-            }
-        }
     //
 
     // Frequency
         /// Represents a freqency in Hertz (or 1 / Seconds)
+        /// 
+        /// ```rust
+        /// use syunit::prelude::*;
+        /// 
+        /// // Seconds conversion
+        /// assert_eq!(Hertz(4.0), 1.0 / Seconds(0.25));
+        /// assert_eq!(1.0 / Hertz(5.0), Seconds(0.2));
+        /// 
+        /// // Basic maths
+        /// assert_eq!(Hertz(3.0) + Hertz(2.0), Hertz(5.0));
+        /// assert_eq!(Hertz(3.0) - Hertz(2.0), Hertz(1.0)); 
+        /// assert_eq!(Hertz(3.0) * 2.0, Hertz(6.0));
+        /// assert_eq!(Hertz(3.0) / -2.0, Hertz(-1.5));
+        /// ```
         #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
         pub struct Hertz(pub f32);
         basic_unit!(Hertz, "Hz");
         additive_unit!(Hertz);
+
+        impl Mul<Hertz> for Seconds {
+            type Output = f32;
+
+            #[inline]
+            fn mul(self, rhs: Hertz) -> Self::Output {
+                self.0 * rhs.0
+            }
+        }
+
+        impl Mul<Seconds> for Hertz {
+            type Output = f32;
+
+            #[inline]
+            fn mul(self, rhs: Seconds) -> Self::Output {
+                self.0 * rhs.0
+            }
+        }
 
         impl Div<Hertz> for f32 {
             type Output = Seconds;
@@ -370,9 +400,30 @@ use crate as syunit;
                 Seconds(self / rhs.0)
             }
         }
+
+        impl Div<Seconds> for f32 {
+            type Output = Hertz;
+
+            #[inline(always)]
+            fn div(self, rhs: Seconds) -> Self::Output {
+                Hertz(self / rhs.0)
+            }
+        }
     // 
 
     /// Represents a position in Radians
+    /// 
+    /// ```
+    /// use syunit::prelude::*;
+    /// 
+    /// // Position math
+    /// assert_eq!(PositionRad(3.0) + Radians(2.0), PositionRad(5.0));
+    /// assert_eq!(PositionRad(3.0) - PositionRad(2.0), Radians(1.0)); 
+    /// 
+    /// // Basic maths
+    /// assert_eq!(Radians(3.0) * 2.0, Radians(6.0));
+    /// assert_eq!(Radians(3.0) / -2.0, Radians(-1.5));
+    /// ```
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct PositionRad(pub f32);
@@ -380,6 +431,19 @@ use crate as syunit;
     syunit::position_unit!(PositionRad, Radians);
 
     /// Represents Radians (rad)
+    /// 
+    /// ```rust
+    /// use syunit::prelude::*;
+    /// 
+    /// // Basic maths
+    /// assert_eq!(Radians(3.0) + Radians(2.0), Radians(5.0));
+    /// assert_eq!(Radians(3.0) - Radians(2.0), Radians(1.0)); 
+    /// assert_eq!(Radians(3.0) * 2.0, Radians(6.0));
+    /// assert_eq!(Radians(3.0) / -2.0, Radians(-1.5));
+    /// 
+    /// // Angle calculations
+    /// assert_eq!(Radians(2.0) * Millimeters(3.0), Millimeters(6.0));
+    /// ```
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct Radians(pub f32);
@@ -388,6 +452,19 @@ use crate as syunit;
     syunit::derive_units!(Radians, RadPerSecond, Seconds);
 
     /// Represents Radians per second (rad/s)
+    /// 
+    /// ```rust
+    /// use syunit::prelude::*;
+    /// 
+    /// // Basic maths
+    /// assert_eq!(RadPerSecond(3.0) + RadPerSecond(2.0), RadPerSecond(5.0));
+    /// assert_eq!(RadPerSecond(3.0) - RadPerSecond(2.0), RadPerSecond(1.0)); 
+    /// assert_eq!(RadPerSecond(3.0) * 2.0, RadPerSecond(6.0));
+    /// assert_eq!(RadPerSecond(3.0) / -2.0, RadPerSecond(-1.5));
+    /// 
+    /// // Angle calculations
+    /// assert_eq!(RadPerSecond(2.0) * Millimeters(3.0), MMPerSecond(6.0));     // ang-velocity * radius = velocity
+    /// ```
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct RadPerSecond(pub f32);
@@ -395,7 +472,20 @@ use crate as syunit;
     syunit::additive_unit!(RadPerSecond);
     syunit::derive_units!(RadPerSecond, RadPerSecond2, Seconds);
 
-    /// Represents metric Radians per second (rad/s^2)
+    /// Represents Radians per second squared (rad/s^2)
+    /// 
+    /// ```rust
+    /// use syunit::prelude::*;
+    /// 
+    /// // Basic maths
+    /// assert_eq!(RadPerSecond2(3.0) + RadPerSecond2(2.0), RadPerSecond2(5.0));
+    /// assert_eq!(RadPerSecond2(3.0) - RadPerSecond2(2.0), RadPerSecond2(1.0)); 
+    /// assert_eq!(RadPerSecond2(3.0) * 2.0, RadPerSecond2(6.0));
+    /// assert_eq!(RadPerSecond2(3.0) / -2.0, RadPerSecond2(-1.5));
+    /// 
+    /// // Angle calculations
+    /// assert_eq!(RadPerSecond2(2.0) * Millimeters(3.0), MMPerSecond2(6.0));     // ang-acceleration * radius = acceleration
+    /// ```
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct RadPerSecond2(pub f32);
@@ -403,7 +493,20 @@ use crate as syunit;
     syunit::additive_unit!(RadPerSecond2);
     syunit::derive_units!(RadPerSecond2, RadPerSecond3, Seconds);
 
-    /// Represents metric meters
+    /// Represents Radians per second qubed (rad/s^3)
+    /// 
+    /// ```rust
+    /// use syunit::prelude::*;
+    /// 
+    /// // Basic maths
+    /// assert_eq!(RadPerSecond3(3.0) + RadPerSecond3(2.0), RadPerSecond3(5.0));
+    /// assert_eq!(RadPerSecond3(3.0) - RadPerSecond3(2.0), RadPerSecond3(1.0)); 
+    /// assert_eq!(RadPerSecond3(3.0) * 2.0, RadPerSecond3(6.0));
+    /// assert_eq!(RadPerSecond3(3.0) / -2.0, RadPerSecond3(-1.5));
+    /// 
+    /// // Angle calculations
+    /// assert_eq!(RadPerSecond3(2.0) * Millimeters(3.0), MMPerSecond3(6.0));     // ang-jolt * radius = jolt
+    /// ```
     #[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct RadPerSecond3(pub f32);

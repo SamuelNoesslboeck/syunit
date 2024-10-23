@@ -4,12 +4,11 @@
 
 -----------------------------
 
-A small library that contains some basic units to help structuring kinematics and robotic programming in rust. The library uses rusts *tuple structs* to create a zero-overhead and compile-time checking of correct unit, variable and function usage.
+A small library that contains some basic units to help structuring kinematics and robotic programming in rust. The library uses rusts *tuple structs* to create a compile-time checking of correct unit, variable and function usage.
 
 ## Quick introduction
 
-In many functions for kinematics and robotics, it sometimes becomes unclear which type of unit is desired to be used, especially when it
-comes to distances. 
+In many functions for kinematics and robotics, it sometimes becomes unclear which type of unit is desired to be used.
 
 ```rust
 /// Relative movement
@@ -23,7 +22,7 @@ fn move_to_position(pos : f32, vel : f32) {
 }
 ```
 
-Even if most code is not as horribly documented and uses such terrible names, nothing stops a developer from accidently plugging in an absolute distance into a function that takes a relative one. Here comes this library into play:
+Even if most code is not as horribly documented, nothing stops a developer from accidently plugging in an absolute distance into a function that takes a relative one. Here comes this library into play:
 
 ```rust
 use syunit::prelude::*;
@@ -37,18 +36,16 @@ fn move_distance(dist : Radians, vel : RadPerSecond) {
 fn move_to_position(pos : PositionRad, vel : RadPerSecond) {
     // ...
 }
-
-// RelDist => Relative distance
-// AbsPos => Absolute distance
-//
-// Naming choice will be explained later
 ```
 
-Each unit is represented by a 32bit float enclosed into a *tuple struct*. Why these units are helpful not only for documentation is explained in the flowing chapters:
+Each unit is represented by a `f32` enclosed into a *tuple struct*, making them simple but also their own type!
 
-## Creation and conversion
+Why these units are helpful not only for documentation is explained in the flowing chapters:
 
-As rust always prefers implicit syntax, so does this library. The unit types cannot be converted back to a `f32` without calling `into()`.
+
+### Explicit syntax
+
+As rust always prefers explicit syntax, so does this library. The unit types cannot be converted back to a `f32` without calling `into()`.
 
 ```rust ,compile_fail
 use syunit::prelude::*;
@@ -83,38 +80,46 @@ requires_velocity(abs_pos);
 // |
 ```
 
-## Naming
 
-As the units are all named after their purpose, the context of functions, their parameters and other variables becomes clear easier. However the library does *not* differentiate between linear and rotary movement in terms of naming.
+### Operations and automatic type evaluation
 
-However there are two units for distances with different names:
-
-- `AbsPos`: Represents an absolute distance *component angle/distance*
-- `RelDist`: Represents a relative distance
-
-## Operations and automatic type evaluation
-
-Especially with distances, a lot of operations between them are restricted, as they would fail to make any sense. For example an `AbsPos` distance cannot be added to another `AbsPos` distance, as it does not make any sense to add two absolute distances. However a `RelDist` distance can be added to an `AbsPos` to extend/shorten said distance. 
+The library comes with a lot of implementations in addition to the units, making it possible to do a lot of operations with these units and letting the compiler automatically evaluate the resulting units for you
 
 ```rust
 use syunit::prelude::*;
 
-let abs_pos = PositionMM(2.0);
-let rel_dist = Millimeters(1.0);
+// Radial / Linear
+assert_eq!(RadPerSecond(4.0) * Millimeters(2.0), MMPerSecond(8.0));
+assert_eq!(RadPerSecond2(-3.0) * Millimeters(2.0), MMPerSecond2(-6.0));
 
-assert_eq!(abs_pos + rel_dist, PositionMM(3.0));
-assert_eq!(abs_pos - rel_dist, PositionMM(1.0));
+// Seconds / Hertz
+assert_eq!(Hertz(4.0), 1.0 / Seconds(0.25));
+assert_eq!(1.0 / Hertz(5.0), Seconds(0.2));
+
+// Time to build up speed
+assert_eq!(MMPerSecond(6.0) / MMPerSecond2(2.0), Seconds(3.0));
+
+// Forces
+assert_eq!(NewtonMeters(-5.0) / KgMeter2(2.0), RadPerSecond2(-2.5));
+assert!((Newtons(3.0) / Kilogramms(1.5) - MMPerSecond2(2000.0)).abs().0 < 0.001);  // Automatic conversion
+
+// ...
 ```
 
-Also it is for example possible to subtract two absolute distances, which gives the relative `RelDist` distance between them.
+Another helpful unit type are `Positions`, they help differentiating between *absolute* and *relative* distances.
 
 ```rust
 use syunit::prelude::*;
 
+// Difference between two positions is a relative distance
 assert_eq!(PositionMM(5.0) - PositionMM(3.0), Millimeters(2.0));
+
+// Radial position math
+assert_eq!(PositionRad(3.0) + Radians(2.0), PositionRad(5.0));
+assert_eq!(PositionRad(3.0) - PositionRad(2.0), Radians(1.0)); 
 ```
 
-A very special unit is `Time`, dividing or multipling by it often changes units.
+A very special unit is `Seconds`, dividing or multipling by it often changes units.
 
 ```rust
 use syunit::prelude::*;
@@ -127,9 +132,29 @@ assert_eq!(MMPerSecond(3.0) / Seconds(2.0), MMPerSecond2(1.5));
 assert_eq!(MMPerSecond(3.0) * Seconds(3.0), Millimeters(9.0));
 ```
 
-## Specific units - Metric and Imperial
+### Unitsets
 
-In addition to these universal units (like `Velocity`, `Acceleration` ...), the library also includes metric and imperial units and conversions between them.
+There is also a tool for defining functions in a more general way, with the help of `UnitSets`!
+
+```rust
+use syunit::prelude::*;
+
+fn get_distance<U : UnitSet>(vel : U::Velocity, time : U::Time) -> U::Distance {
+    vel * time      // Compiler automatically checks if the types match
+}
+
+fn time_for_dist_accelerating<U : UnitSet>(distance : U::Distance, vel_start : U::Velocity, vel_end : U::Velocity) -> U::Time {
+    let vel_avg = (vel_start + vel_end) / 2.0;
+    distance / vel_avg
+}
+
+assert_eq!(get_distance::<MetricMM>(MMPerSecond(4.0), Seconds(2.0)), Millimeters(8.0));     // Using linear metric mm
+assert_eq!(time_for_dist_accelerating::<Rotary>(Radians(3.0), RadPerSecond(2.0), RadPerSecond(4.0)), Seconds(1.0));     // Using rotary units
+```
+
+### Metric and Imperial
+
+The library also includes imperial units and conversions between them.
 
 ```rust
 use syunit::prelude::*;
@@ -147,4 +172,4 @@ All the units implement `serde::Serialize` and `serde::Deserialize` if the "serd
 
 ## Issues and improvements
 
-Please feel free to create issues on the [github repo](https://github.com/SamuelNoesslboeck/syunit) or contact me directly.
+Please feel free to create issues on the [github repo](https://github.com/SamuelNoesslboeck/syunit)!

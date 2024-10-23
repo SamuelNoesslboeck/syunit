@@ -67,12 +67,12 @@ where
 /// ```rust
 /// use syunit::prelude::*;
 /// 
-/// let comp_pos_ori = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
-/// let comp_pos_same = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
-/// let comp_pos_diff = [ PositionMM(1.0), PositionMM(2.0), PositionMM(3.5) ];
+/// let pos_list = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
+/// let pos_list_eq = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
+/// let pos_list_uneq = [ PositionMM(1.0), PositionMM(2.0), PositionMM(3.5) ];
 /// 
-/// assert!(compare_unit_arrays(comp_pos_ori, comp_pos_same));
-/// assert!(!compare_unit_arrays(comp_pos_ori, comp_pos_diff)); 
+/// assert!(compare_unit_arrays(pos_list, pos_list_eq));
+/// assert!(!compare_unit_arrays(pos_list, pos_list_uneq)); 
 /// ```
 pub fn compare_unit_arrays<U, const C : usize>(base : [U; C], rhs : [U; C]) -> bool
 where
