@@ -1,5 +1,3 @@
-use super::*;
-
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize}; 
 
@@ -68,30 +66,20 @@ use serde::{Serialize, Deserialize};
             ((max_duty as f32) * self.0) as u16 
         }
 
-        /// Returns the [f32] value
+        /// Get the [f32] value of the factor
         pub const fn as_f32(self) -> f32 {
             self.0
         }
     }
 
+    impl From<Factor> for f32 {
+        fn from(value: Factor) -> Self {
+            value.0
+        }
+    }
+
     impl core::ops::Mul<Factor> for Factor {
         type Output = Factor;
-
-        fn mul(self, rhs: Factor) -> Self::Output {
-            Self::new(self.0 * rhs.0)
-        }
-    }
-
-    impl core::ops::Mul<Factor> for Velocity {
-        type Output = Velocity;
-
-        fn mul(self, rhs: Factor) -> Self::Output {
-            Self::new(self.0 * rhs.0)
-        }
-    }
-
-    impl core::ops::Mul<Factor> for Time {
-        type Output = Time;
 
         fn mul(self, rhs: Factor) -> Self::Output {
             Self::new(self.0 * rhs.0)

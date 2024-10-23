@@ -7,12 +7,12 @@ use core::ops::{Add, Sub};
 /// A simple example would be adding some relative distances to some component distances
 /// 
 /// ```rust
-/// use syunit::*;
+/// use syunit::prelude::*;
 /// 
-/// let abs_pos_list = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
-/// let rel_dists = [ RelDist(1.2), RelDist(3.5), RelDist(0.5) ];
+/// let abs_pos_list = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
+/// let rel_dists = [ Millimeters(1.2), Millimeters(3.5), Millimeters(0.5) ];
 /// 
-/// assert!(compare_unit_arrays(add_unit_arrays(abs_pos_list, rel_dists), [ AbsPos(3.2), AbsPos(4.5), AbsPos(-3.0) ]));
+/// assert!(compare_unit_arrays(add_unit_arrays(abs_pos_list, rel_dists), [ PositionMM(3.2), PositionMM(4.5), PositionMM(-3.0) ]));
 /// ```
 pub fn add_unit_arrays<U, Rhs, const C : usize>(base : [U; C], rhs : [Rhs; C]) -> [U::Output; C]
 where
@@ -37,12 +37,12 @@ where
 /// A simple example would be subtracting some relative distances to some components distances
 /// 
 /// ```rust
-/// use syunit::*;
+/// use syunit::prelude::*;
 /// 
-/// let abs_pos_list = [ AbsPos(2.2), AbsPos(1.0), AbsPos(-3.5) ];
-/// let rel_dists = [ RelDist(1.2), RelDist(3.5), RelDist(0.5) ];
+/// let abs_pos_list = [ PositionMM(2.2), PositionMM(1.0), PositionMM(-3.5) ];
+/// let rel_dists = [ Millimeters(1.2), Millimeters(3.5), Millimeters(0.5) ];
 /// 
-/// assert!(compare_unit_arrays(sub_unit_arrays(abs_pos_list, rel_dists), [ AbsPos(1.0), AbsPos(-2.5), AbsPos(-4.0) ]));
+/// assert!(compare_unit_arrays(sub_unit_arrays(abs_pos_list, rel_dists), [ PositionMM(1.0), PositionMM(-2.5), PositionMM(-4.0) ]));
 /// ```
 pub fn sub_unit_arrays<U, Rhs, const C : usize>(base : [U; C], rhs : [Rhs; C]) -> [U::Output; C]
 where
@@ -65,14 +65,14 @@ where
 /// # Example
 /// 
 /// ```rust
-/// use syunit::*;
+/// use syunit::prelude::*;
 /// 
-/// let comp_pos_ori = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
-/// let comp_pos_same = [ AbsPos(2.0), AbsPos(1.0), AbsPos(-3.5) ];
-/// let comp_pos_diff = [ AbsPos(1.0), AbsPos(2.0), AbsPos(3.5) ];
+/// let pos_list = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
+/// let pos_list_eq = [ PositionMM(2.0), PositionMM(1.0), PositionMM(-3.5) ];
+/// let pos_list_uneq = [ PositionMM(1.0), PositionMM(2.0), PositionMM(3.5) ];
 /// 
-/// assert!(compare_unit_arrays(comp_pos_ori, comp_pos_same));
-/// assert!(!compare_unit_arrays(comp_pos_ori, comp_pos_diff)); 
+/// assert!(compare_unit_arrays(pos_list, pos_list_eq));
+/// assert!(!compare_unit_arrays(pos_list, pos_list_uneq)); 
 /// ```
 pub fn compare_unit_arrays<U, const C : usize>(base : [U; C], rhs : [U; C]) -> bool
 where
